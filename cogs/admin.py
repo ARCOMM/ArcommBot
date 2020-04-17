@@ -16,7 +16,6 @@ class Admin(commands.Cog):
     @commands.command(name = "shutdown", hidden = True)
     @commands.is_owner()
     async def _shutdown(self, ctx):
-        await ctx.voice_client.disconnect()
         exit()
 
 
