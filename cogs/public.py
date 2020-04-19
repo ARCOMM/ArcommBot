@@ -12,10 +12,31 @@ class Public(commands.Cog):
     #===Commands===#
 
     @commands.command()
-    async def opday(self, ctx):
+    async def optime(self, ctx):
         dt = self.timeUntilOpday()
-        dtString = "There are {} days, {} hours, and {} minutes until opday".format(dt.days, dt.seconds//3600, (dt.seconds//60) % 60)
-        await self.send_message(ctx.channel, dtString, immutable = True)
+        timeUnits = [[dt.days, "days"], [dt.seconds//3600, "hours"], [(dt.seconds//60) % 60, "minutes"]]
+
+        for unit in timeUnits:
+            if unit[0] == 0:
+                timeUnits.remove(unit)
+
+        i = 0
+        dtString = ""
+        for unit in timeUnits:
+            i += 1
+            if i == len(timeUnits):
+                if dtString != "":
+                    dtString += ("and {} {}".format(unit[0], unit[1]))
+                else:
+                    dtString += ("{} {}".format(unit[0], unit[1]))
+            elif i == len(timeUnits) - 1:
+                dtString += ("{} {} ".format(unit[0], unit[1]))
+            else:
+                dtString += ("{} {}, ".format(unit[0], unit[1]))
+            
+        outString = "There are {} until optime!".format(dtString)
+        #dtString = "There are {} days, {} hours, and {} minutes until opday".format(dt.days, dt.seconds//3600, (dt.seconds//60) % 60)
+        await self.send_message(ctx.channel, outString, immutable = True)
 
     #===Utility===#
 
