@@ -12,8 +12,33 @@ class Public(commands.Cog):
     #===Commands===#
 
     @commands.command()
-    async def optime(self, ctx):
-        dt = self.timeUntilOpday()
+    async def opday(self, ctx):
+        dt = self.timeUntil()
+        dt = self.formatDt(dt)        
+        outString = "There {} until opday!".format(dt)
+        await self.send_message(ctx.channel, outString, immutable = True)
+    
+    #===Utility===#
+
+    async def send_message(self, channel, message: str, overwrite: bool = False, immutable: bool = False):
+        """Send a message to the text channel"""
+
+        prev_message = self.data['prev_message']
+        newMessage = None
+
+        if overwrite and (channel.last_message_id == prev_message.id):
+            await prev_message.edit(content = message)         
+            newMessage = prev_message
+        else:
+            await channel.trigger_typing()
+            newMessage = await channel.send(message)
+        
+        if not immutable:
+            self.data['prev_message'] = newMessage
+
+        return newMessage
+
+    def formatDt(self, dt):
         timeUnits = [[dt.days, "days"], [dt.seconds//3600, "hours"], [(dt.seconds//60) % 60, "minutes"]]
 
         for unit in timeUnits:
@@ -44,31 +69,9 @@ class Public(commands.Cog):
             isAre = "is"      
         else:
             isAre = "are"
-            
-        outString = "There {} {} until optime!".format(isAre, dtString)
-        #dtString = "There are {} days, {} hours, and {} minutes until opday".format(dt.days, dt.seconds//3600, (dt.seconds//60) % 60)
-        await self.send_message(ctx.channel, outString, immutable = True)
 
-    #===Utility===#
-
-    async def send_message(self, channel, message: str, overwrite: bool = False, immutable: bool = False):
-        """Send a message to the text channel"""
-
-        prev_message = self.data['prev_message']
-        newMessage = None
-
-        if overwrite and (channel.last_message_id == prev_message.id):
-            await prev_message.edit(content = message)         
-            newMessage = prev_message
-        else:
-            await channel.trigger_typing()
-            newMessage = await channel.send(message)
-        
-        if not immutable:
-            self.data['prev_message'] = newMessage
-
-        return newMessage
-
+        return "{} {}".format(isAre, dtString)
+    
     def timeUntilOpday(self):
         today = datetime.now(tz = timezone('Europe/London'))
         daysUntilOpday = timedelta((12 - today.weekday()) % 7)
