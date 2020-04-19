@@ -13,9 +13,16 @@ class Public(commands.Cog):
 
     @commands.command()
     async def opday(self, ctx):
-        dt = self.timeUntil()
+        dt = self.timeUntil("opday")
         dt = self.formatDt(dt)        
         outString = "There {} until opday!".format(dt)
+        await self.send_message(ctx.channel, outString, immutable = True)
+
+    @commands.command()
+    async def optime(self, ctx):
+        dt = self.timeUntil("optime")
+        dt = self.formatDt(dt)
+        outString = "There {} until optime!".format(dt)
         await self.send_message(ctx.channel, outString, immutable = True)
     
     #===Utility===#
@@ -51,6 +58,7 @@ class Public(commands.Cog):
             i += 1
             if unit[0] == 1: # Remove s from end of word if singular
                 unit[1] = unit[1][:-1]
+
             if i == len(timeUnits):
                 if dtString != "":
                     if len(timeUnits) > 2:
@@ -72,12 +80,19 @@ class Public(commands.Cog):
 
         return "{} {}".format(isAre, dtString)
     
-    def timeUntilOpday(self):
+    def timeUntil(self, time = "opday"):
         today = datetime.now(tz = timezone('Europe/London'))
-        daysUntilOpday = timedelta((12 - today.weekday()) % 7)
+        opday = None
 
-        opday = today + daysUntilOpday
-        opday = opday.replace(hour = 18, minute = 0, second = 0)
+        if time == "opday":
+            daysUntilOpday = timedelta((12 - today.weekday()) % 7)
+            opday = today + daysUntilOpday
+            opday = opday.replace(hour = 18, minute = 0, second = 0)
+        elif time == "optime":
+            opday = today
+            opday = opday.replace(hour = 18, minute = 0, second = 0)
+            if today.hour >= 18:
+                opday = opday.replace(day = today.day + 1)
 
         return opday - today
 
