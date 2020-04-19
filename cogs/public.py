@@ -1,19 +1,19 @@
 from datetime import datetime, timedelta
+from pytz import timezone
 
 import discord
 from discord.ext import commands
 
-
-class Public(commands.cog):
+class Public(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.data = {'prev_message' : discord.Message()}
+        self.data = {'prev_message' : None}
 
     #===Commands===#
 
     @commands.command()
     async def opday(self, ctx):
-        dt = timeUntilOpday()
+        dt = self.timeUntilOpday()
         dtString = "There are {} days, {} hours, and {} minutes until opday".format(dt.days, dt.seconds//3600, (dt.seconds//60) % 60)
         await self.send_message(ctx.channel, dtString, immutable = True)
 
@@ -37,8 +37,8 @@ class Public(commands.cog):
 
         return newMessage
 
-    def timeUntilOpday():
-        today = datetime.now()
+    def timeUntilOpday(self):
+        today = datetime.now(tz = timezone('Europe/London'))
         daysUntilOpday = timedelta((12 - today.weekday()) % 7)
 
         opday = today + daysUntilOpday
@@ -51,3 +51,7 @@ class Public(commands.cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print('Bot is online')
+
+
+def setup(bot):
+    bot.add_cog(Public(bot))
