@@ -49,6 +49,13 @@ class Public(commands.Cog):
 
         await self.send_message(ctx.channel, outString, immutable = True)
        
+    @commands.command()
+    async def dst(self, ctx):
+        timez = timezone("Europe/London")
+        outString = "DST is in effect" if datetime.now(timez).dst() else "DST is ***not*** in effect"
+
+        await self.send_message(ctx.channel, outString, immutable = True)
+    
     #===Utility===#
 
     async def send_message(self, channel, message: str, overwrite: bool = False, immutable: bool = False):
