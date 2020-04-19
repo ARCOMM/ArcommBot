@@ -13,6 +13,8 @@ class Public(commands.Cog):
 
     @commands.command()
     async def opday(self, ctx):
+        """Time left until opday (Saturday optime)"""
+
         dt = self.timeUntil("opday")
         dt = self.formatDt(dt)        
         outString = "There {} until opday!".format(dt)
@@ -20,6 +22,16 @@ class Public(commands.Cog):
 
     @commands.command()
     async def optime(self, ctx, modifier = '0', timez = None):
+        """Time left until optime
+
+        Usage:
+            optime
+            optime +x
+            optime timezone
+            optime -x timezone
+            Timezones can be: CET or Europe/London or US/Pacific etc.
+        """
+        
         try:
             modifier = int(modifier)
         except Exception as e:
@@ -51,6 +63,8 @@ class Public(commands.Cog):
        
     @commands.command()
     async def dst(self, ctx):
+        """Check if DST has started"""
+
         timez = timezone("Europe/London")
         outString = "DST is in effect" if datetime.now(timez).dst() else "DST is ***not*** in effect"
 
