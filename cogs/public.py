@@ -19,10 +19,23 @@ class Public(commands.Cog):
         await self.send_message(ctx.channel, outString, immutable = True)
 
     @commands.command()
-    async def optime(self, ctx):
-        dt = self.timeUntil("optime")
+    async def optime(self, ctx, modifier = '0'):
+        try:
+            modifier = int(modifier)
+        except Exception as e:
+            print(".optime modifier was not an int")
+            return
+
+        dt = self.timeUntil("optime", modifier)
         dt = self.formatDt(dt)
-        outString = "There {} until optime!".format(dt)
+        
+        if modifier == 0:
+            outString = "There {} until optime!".format(dt)
+        elif modifier > 0:
+            outString = "There {} until optime +{}!".format(dt, modifier)
+        else:
+            outString = "There {} until optime {}!".format(dt, modifier)
+
         await self.send_message(ctx.channel, outString, immutable = True)
     
     #===Utility===#
@@ -80,7 +93,7 @@ class Public(commands.Cog):
 
         return "{} {}".format(isAre, dtString)
     
-    def timeUntil(self, time = "opday"):
+    def timeUntil(self, time = "opday", modifier = 0):
         today = datetime.now(tz = timezone('Europe/London'))
         opday = None
 
@@ -90,7 +103,7 @@ class Public(commands.Cog):
             opday = opday.replace(hour = 18, minute = 0, second = 0)
         elif time == "optime":
             opday = today
-            opday = opday.replace(hour = 18, minute = 0, second = 0)
+            opday = opday.replace(hour = 18 + modifier, minute = 0, second = 0)
             if today.hour >= 18:
                 opday = opday.replace(day = today.day + 1)
 
