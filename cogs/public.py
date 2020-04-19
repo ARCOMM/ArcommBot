@@ -26,11 +26,14 @@ class Public(commands.Cog):
             i += 1
             if i == len(timeUnits):
                 if dtString != "":
-                    dtString += ("and {} {}".format(unit[0], unit[1]))
+                    if len(timeUnits) > 2:
+                        dtString += (", and {} {}".format(unit[0], unit[1]))
+                    else:
+                        dtString += (" and {} {}".format(unit[0], unit[1]))
                 else:
                     dtString += ("{} {}".format(unit[0], unit[1]))
             elif i == len(timeUnits) - 1:
-                dtString += ("{} {} ".format(unit[0], unit[1]))
+                dtString += ("{} {}".format(unit[0], unit[1]))
             else:
                 dtString += ("{} {}, ".format(unit[0], unit[1]))
             
