@@ -20,10 +20,12 @@ class Public(commands.Cog):
             if unit[0] == 0:
                 timeUnits.remove(unit)
 
-        i = 0
         dtString = ""
+        i = 0
         for unit in timeUnits:
             i += 1
+            if unit[0] == 1: # Remove s from end of word if singular
+                unit[1] = unit[1][:-1]
             if i == len(timeUnits):
                 if dtString != "":
                     if len(timeUnits) > 2:
@@ -36,8 +38,14 @@ class Public(commands.Cog):
                 dtString += ("{} {}".format(unit[0], unit[1]))
             else:
                 dtString += ("{} {}, ".format(unit[0], unit[1]))
+
+        isAre = ""
+        if timeUnits[0][0] == 1:
+            isAre = "is"      
+        else:
+            isAre = "are"
             
-        outString = "There are {} until optime!".format(dtString)
+        outString = "There {} {} until optime!".format(isAre, dtString)
         #dtString = "There are {} days, {} hours, and {} minutes until opday".format(dt.days, dt.seconds//3600, (dt.seconds//60) % 60)
         await self.send_message(ctx.channel, outString, immutable = True)
 
