@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from pytz import timezone
+from pytz import timezone, UnknownTimeZoneError
 
 import discord
 from discord.ext import commands
@@ -19,12 +19,13 @@ class Public(commands.Cog):
         await self.send_message(ctx.channel, outString, immutable = True)
 
     @commands.command()
-    async def optime(self, ctx, modifier = '0'):
+    async def optime(self, ctx, modifier = '0', timez = None):
         try:
             modifier = int(modifier)
         except Exception as e:
-            print(".optime modifier was not an int")
-            return
+            print(".optime modifier was not an int, assume timezone")
+            timez = modifier
+            modifier = 0
 
         dt = self.timeUntil("optime", modifier)
         dt = self.formatDt(dt)
@@ -35,9 +36,19 @@ class Public(commands.Cog):
             outString = "There {} until optime +{}!".format(dt, modifier)
         else:
             outString = "There {} until optime {}!".format(dt, modifier)
+      
+        if timez != None:
+            try:
+                timez = timezone(timez)
+                localTime = datetime.now().replace(hour = 18 + modifier)
+                localTime = localTime.astimezone(timez)
+                outString += "\n({}:00:00 {})".format(localTime.hour, timez.zone)
+            except UnknownTimeZoneError as e:
+                await self.send_message(ctx.channel, "Invalid timezone", immutable = True)
+                return
 
         await self.send_message(ctx.channel, outString, immutable = True)
-    
+       
     #===Utility===#
 
     async def send_message(self, channel, message: str, overwrite: bool = False, immutable: bool = False):
@@ -64,14 +75,13 @@ class Public(commands.Cog):
         for unit in timeUnits:
             if unit[0] == 0:
                 timeUnits.remove(unit)
+            elif unit[0] == 1: # Remove s from end of word if singular
+                unit[1] = unit[1][:-1]
 
         dtString = ""
         i = 0
         for unit in timeUnits:
             i += 1
-            if unit[0] == 1: # Remove s from end of word if singular
-                unit[1] = unit[1][:-1]
-
             if i == len(timeUnits):
                 if dtString != "":
                     if len(timeUnits) > 2:
@@ -85,11 +95,7 @@ class Public(commands.Cog):
             else:
                 dtString += ("{} {}, ".format(unit[0], unit[1]))
 
-        isAre = ""
-        if timeUnits[0][0] == 1:
-            isAre = "is"      
-        else:
-            isAre = "are"
+        isAre = "is" if timeUnits[0][0] == 1 else "are"
 
         return "{} {}".format(isAre, dtString)
     
