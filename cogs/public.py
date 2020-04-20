@@ -61,12 +61,21 @@ class Public(commands.Cog):
 
         await self.send_message(ctx.channel, outString, immutable = True)
        
-    @commands.command()
+    @commands.command(aliases=['daylightsavings'])
     async def dst(self, ctx):
         """Check if DST has started"""
 
         timez = timezone("Europe/London")
         outString = "DST is in effect" if datetime.now(timez).dst() else "DST is ***not*** in effect"
+
+        await self.send_message(ctx.channel, outString, immutable = True)
+    
+    @commands.command(aliases=['utc'])
+    async def zulu(self, ctx):
+        '''Return Zulu (UTC) time'''
+
+        now = datetime.utcnow()
+        outString = "It is currently {}:{}:{} Zulu time (UTC)".format(now.hour, now.minute, now.second)
 
         await self.send_message(ctx.channel, outString, immutable = True)
     
