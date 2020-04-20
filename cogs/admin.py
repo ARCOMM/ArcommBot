@@ -1,8 +1,32 @@
 from discord.ext import commands
 
+def is_admin(ctx):
+    if ctx.author.id == 173123135321800704: 
+        return True
+    return ctx.author.has_role("Staff")
+
+class Attendance():
+    def __init__(self, channel):
+        self.channel = channel
+        self.messages = {"intro" : None,
+                         "pvp" : None,
+                         "coop1" : None,
+                         "coop2" : None}
+        self.reactions = {"pvp" : None,
+                          "coop1" : None,
+                          "coop2" : None}
+    
+    async def send_message(self, channel, name, message, reaction = False):
+        newMessage = await channel.send(message)
+        self.messages[name] = newMessage
+
+        if reaction:
+            self.reactions[name] = await newMessage.add_reaction("\N{THUMBS UP SIGN}")
+
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.attend = None
     
     @commands.command(name = "reload", hidden = True)
     @commands.is_owner()
@@ -19,6 +43,15 @@ class Admin(commands.Cog):
     @commands.is_owner()
     async def _shutdown(self, ctx):
         exit()
+
+    @commands.command()
+    @commands.check(is_admin)
+    async def attendance(self, ctx):
+        self.attend = Attendance(ctx.channel)
+        await self.attend.send_message(ctx.channel, "intro", "@here intro\nReact to show planned attendance")
+        await self.attend.send_message(ctx.channel, "pvp", "pvp post", reaction = True)
+        await self.attend.send_message(ctx.channel, "coop1", "coop1 post", reaction = True)
+        await self.attend.send_message(ctx.channel, "coop2", "coop2 post", reaction = True)
 
 
 def setup(bot):
