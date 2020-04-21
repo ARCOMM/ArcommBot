@@ -10,7 +10,6 @@ RESERVED_ROLES = os.getenv('RESERVED_ROLES')
 class Public(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.data = {'prev_message' : None}
 
     #===Commands===#
 
@@ -21,7 +20,7 @@ class Public(commands.Cog):
         dt = self.timeUntil("opday")
         dt = self.formatDt(dt)        
         outString = "There {} until opday!".format(dt)
-        await self.send_message(ctx.channel, outString, immutable = True)
+        await self.send_message(ctx.channel, outString)
 
     @commands.command()
     async def optime(self, ctx, modifier = '0', timez = None):
@@ -59,10 +58,10 @@ class Public(commands.Cog):
                 localTime = localTime.astimezone(timez)
                 outString += "\n({}:00:00 {})".format(localTime.hour, timez.zone)
             except UnknownTimeZoneError as e:
-                await self.send_message(ctx.channel, "Invalid timezone", immutable = True)
+                await self.send_message(ctx.channel, "Invalid timezone")
                 return
 
-        await self.send_message(ctx.channel, outString, immutable = True)
+        await self.send_message(ctx.channel, outString)
        
     @commands.command(aliases = ['daylightsavings'])
     async def dst(self, ctx):
@@ -71,7 +70,7 @@ class Public(commands.Cog):
         timez = timezone("Europe/London")
         outString = "DST is in effect" if datetime.now(timez).dst() else "DST is ***not*** in effect"
 
-        await self.send_message(ctx.channel, outString, immutable = True)
+        await self.send_message(ctx.channel, outString)
     
     @commands.command(aliases = ['utc'])
     async def zulu(self, ctx):
@@ -80,12 +79,12 @@ class Public(commands.Cog):
         now = datetime.utcnow()
         outString = "It is currently {}:{}:{} Zulu time (UTC)".format(now.hour, now.minute, now.second)
 
-        await self.send_message(ctx.channel, outString, immutable = True)
+        await self.send_message(ctx.channel, outString)
     
     @commands.command(aliases = ['role'])
     async def rank(self, ctx, *args):
         """Join or leave a non-reserved role"""
-        
+
         roleQuery = " ".join(args)
         member = ctx.author
         roles = member.guild.roles
@@ -95,35 +94,25 @@ class Public(commands.Cog):
                 if not (role.name in RESERVED_ROLES):
                     if role in member.roles:
                         await member.remove_roles(role, reason = "Removed role through .rank command")
-                        await self.send_message(ctx.channel, "{} You've left **{}**".format(member.mention, role.name), immutable = True)
+                        await self.send_message(ctx.channel, "{} You've left **{}**".format(member.mention, role.name))
                         return
                     else:
                         await ctx.author.add_roles(role, reason = "Added role through .rank command")
-                        await self.send_message(ctx.channel, "{} You've joined **{}**".format(member.mention, role.name), immutable = True)
+                        await self.send_message(ctx.channel, "{} You've joined **{}**".format(member.mention, role.name))
                         return
                 else:
-                    await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name), immutable = True)
+                    await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
                 return   
 
-        await self.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery), immutable = True)
+        await self.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
 
     #===Utility===#
 
-    async def send_message(self, channel, message: str, overwrite: bool = False, immutable: bool = False):
+    async def send_message(self, channel, message: str):
         """Send a message to the text channel"""
 
-        prev_message = self.data['prev_message']
-        newMessage = None
-
-        if overwrite and (channel.last_message_id == prev_message.id):
-            await prev_message.edit(content = message)         
-            newMessage = prev_message
-        else:
-            await channel.trigger_typing()
-            newMessage = await channel.send(message)
-        
-        if not immutable:
-            self.data['prev_message'] = newMessage
+        await channel.trigger_typing()
+        newMessage = await channel.send(message)
 
         return newMessage
 
