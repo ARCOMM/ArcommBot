@@ -5,7 +5,7 @@ import os
 import discord
 from discord.ext import commands
 
-RESERVED_ROLES = os.getenv('RESERVED_ROLES')
+#RESERVED_ROLES = os.getenv('RESERVED_ROLES')
 
 class Public(commands.Cog):
     def __init__(self, bot):
@@ -107,8 +107,10 @@ class Public(commands.Cog):
 
         await self.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
 
-    @commands.command(alises = ['roles'])
+    @commands.command(aliases = ['roles'])
     async def ranks(self, ctx):
+        """Return a list of joinable ranks"""
+
         member = ctx.author
         roles = member.guild.roles
         outString = ""

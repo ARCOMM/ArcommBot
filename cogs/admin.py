@@ -2,7 +2,7 @@ import os
 
 from discord.ext import commands
 
-RESERVED_ROLES = os.getenv('RESERVED_ROLES')
+#RESERVED_ROLES = os.getenv('RESERVED_ROLES')
 
 def is_admin(ctx):
     if ctx.author.id == 173123135321800704: 
