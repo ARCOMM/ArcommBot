@@ -1,13 +1,15 @@
 from datetime import datetime, timedelta
 from pytz import timezone, UnknownTimeZoneError
+import os
 
 import discord
 from discord.ext import commands
 
+#RESERVED_ROLES = os.getenv('RESERVED_ROLES')
+
 class Public(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.data = {'prev_message' : None}
 
     #===Commands===#
 
@@ -18,7 +20,7 @@ class Public(commands.Cog):
         dt = self.timeUntil("opday")
         dt = self.formatDt(dt)        
         outString = "There {} until opday!".format(dt)
-        await self.send_message(ctx.channel, outString, immutable = True)
+        await self.send_message(ctx.channel, outString)
 
     @commands.command()
     async def optime(self, ctx, modifier = '0', timez = None):
@@ -56,57 +58,96 @@ class Public(commands.Cog):
                 localTime = localTime.astimezone(timez)
                 outString += "\n({}:00:00 {})".format(localTime.hour, timez.zone)
             except UnknownTimeZoneError as e:
-                await self.send_message(ctx.channel, "Invalid timezone", immutable = True)
+                await self.send_message(ctx.channel, "Invalid timezone")
                 return
 
-        await self.send_message(ctx.channel, outString, immutable = True)
+        await self.send_message(ctx.channel, outString)
        
-    @commands.command(aliases=['daylightsavings'])
+    @commands.command(aliases = ['daylightsavings'])
     async def dst(self, ctx):
         """Check if DST has started"""
 
         timez = timezone("Europe/London")
         outString = "DST is in effect" if datetime.now(timez).dst() else "DST is ***not*** in effect"
 
-        await self.send_message(ctx.channel, outString, immutable = True)
+        await self.send_message(ctx.channel, outString)
     
-    @commands.command(aliases=['utc'])
+    @commands.command(aliases = ['utc'])
     async def zulu(self, ctx):
         '''Return Zulu (UTC) time'''
 
         now = datetime.utcnow()
         outString = "It is currently {}:{}:{} Zulu time (UTC)".format(now.hour, now.minute, now.second)
 
-        await self.send_message(ctx.channel, outString, immutable = True)
+        await self.send_message(ctx.channel, outString)
+    
+    @commands.command(aliases = ['role'])
+    async def rank(self, ctx, *args):
+        """Join or leave a non-reserved role"""
+
+        roleQuery = " ".join(args)
+        member = ctx.author
+        roles = member.guild.roles
+
+        for role in roles:
+            if role.name.lower() == roleQuery.lower():
+                if role.colour.value == 0:
+                #if not (role.name in RESERVED_ROLES):
+                    if role in member.roles:
+                        await member.remove_roles(role, reason = "Removed role through .rank command")
+                        await self.send_message(ctx.channel, "{} You've left **{}**".format(member.mention, role.name))
+                        return
+                    else:
+                        await ctx.author.add_roles(role, reason = "Added role through .rank command")
+                        await self.send_message(ctx.channel, "{} You've joined **{}**".format(member.mention, role.name))
+                        return
+                else:
+                    await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
+                return   
+
+        await self.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
+
+    @commands.command(aliases = ['roles'])
+    async def ranks(self, ctx):
+        """Return a list of joinable ranks"""
+
+        member = ctx.author
+        roles = member.guild.roles
+        outString = ""
+        longestName = 0
+
+        for role in roles[1:]:
+            if role.colour.value == 0:
+                if len(role.name) > longestName:
+                    longestName = len(role.name)
+
+        for role in roles[1:]:
+            if role.colour.value == 0:
+                spaces = " " * (longestName + 1 - len(role.name))
+                outString += "{}{}- {} members\n".format(role.name, spaces, len(role.members))
+
+        await self.send_message(ctx.channel, "```{}```".format(outString))
     
     #===Utility===#
 
-    async def send_message(self, channel, message: str, overwrite: bool = False, immutable: bool = False):
+    async def send_message(self, channel, message: str):
         """Send a message to the text channel"""
 
-        prev_message = self.data['prev_message']
-        newMessage = None
-
-        if overwrite and (channel.last_message_id == prev_message.id):
-            await prev_message.edit(content = message)         
-            newMessage = prev_message
-        else:
-            await channel.trigger_typing()
-            newMessage = await channel.send(message)
-        
-        if not immutable:
-            self.data['prev_message'] = newMessage
+        await channel.trigger_typing()
+        newMessage = await channel.send(message)
 
         return newMessage
 
     def formatDt(self, dt):
+        # TODO: s not removed on +1/-1 messages as time unit's aren't modified
         timeUnits = [[dt.days, "days"], [dt.seconds//3600, "hours"], [(dt.seconds//60) % 60, "minutes"]]
 
         for unit in timeUnits:
+            print(unit)
             if unit[0] == 0:
                 timeUnits.remove(unit)
             elif unit[0] == 1: # Remove s from end of word if singular
-                unit[1] = unit[1][:-1]
+                unit[1] = unit[1][:-1] 
 
         dtString = ""
         i = 0
