@@ -5,8 +5,6 @@ import os
 import discord
 from discord.ext import commands
 
-#RESERVED_ROLES = os.getenv('RESERVED_ROLES')
-
 class Public(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -92,7 +90,6 @@ class Public(commands.Cog):
         for role in roles:
             if role.name.lower() == roleQuery.lower():
                 if role.colour.value == 0:
-                #if not (role.name in RESERVED_ROLES):
                     if role in member.roles:
                         await member.remove_roles(role, reason = "Removed role through .rank command")
                         await self.send_message(ctx.channel, "{} You've left **{}**".format(member.mention, role.name))

@@ -2,32 +2,10 @@ import os
 
 from discord.ext import commands
 
-#RESERVED_ROLES = os.getenv('RESERVED_ROLES')
-
 def is_admin(ctx):
     if ctx.author.id == 173123135321800704: 
         return True
     return ctx.author.has_role("Staff")
-
-class Attendance():
-    def __init__(self, channel):
-        self.channel = channel
-        self.messages = {"intro" : None,
-                         "pvp" : None,
-                         "coop1" : None,
-                         "coop2" : None}
-    
-    async def send_message(self, channel, name, message, reaction = False):
-        newMessage = await channel.send(message)
-        self.messages[name] = newMessage
-
-        if reaction:
-            await newMessage.add_reaction("\N{THUMBS UP SIGN}")
-
-    async def delete_messages(self):
-        for message in self.messages.items():
-            if message[1] != None:
-                await message[1].delete()
 
 class Admin(commands.Cog):
     def __init__(self, bot):
@@ -79,7 +57,6 @@ class Admin(commands.Cog):
         for role in roles[1:]:
             if role.name.lower() == roleQuery.lower():
                 if not (role.colour.value == 0):
-                #if role.name in RESERVED_ROLES:
                     await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
                     return
 
@@ -88,19 +65,6 @@ class Admin(commands.Cog):
                 return
 
         await self.send_message(ctx.channel, "{} Role **{}** doesn't exist".format(member.mention, roleQuery))
-    
-    @commands.command()
-    @commands.is_owner()
-    #@commands.check(is_admin)
-    async def attendance(self, ctx):
-        if self.attend != None:
-            await self.attend.delete_messages()
-
-        self.attend = Attendance(ctx.channel)
-        await self.attend.send_message(ctx.channel, "intro", "@here intro\nReact to show planned attendance")
-        await self.attend.send_message(ctx.channel, "pvp", "pvp post", reaction = True)
-        await self.attend.send_message(ctx.channel, "coop1", "coop1 post", reaction = True)
-        await self.attend.send_message(ctx.channel, "coop2", "coop2 post", reaction = True)
 
     #===Utility===#
 
