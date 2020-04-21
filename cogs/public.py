@@ -1,8 +1,11 @@
 from datetime import datetime, timedelta
 from pytz import timezone, UnknownTimeZoneError
+import os
 
 import discord
 from discord.ext import commands
+
+RESERVED_ROLES = os.getenv('RESERVED_ROLES')
 
 class Public(commands.Cog):
     def __init__(self, bot):
@@ -79,6 +82,31 @@ class Public(commands.Cog):
 
         await self.send_message(ctx.channel, outString, immutable = True)
     
+    @commands.command(aliases = ['role'])
+    async def rank(self, ctx, *args):
+        """Join or leave a non-reserved role"""
+        
+        roleQuery = " ".join(args)
+        member = ctx.author
+        roles = member.guild.roles
+
+        for role in roles:
+            if role.name.lower() == roleQuery.lower():
+                if not (role.name in RESERVED_ROLES):
+                    if role in member.roles:
+                        await member.remove_roles(role, reason = "Removed role through .rank command")
+                        await self.send_message(ctx.channel, "{} You've left **{}**".format(member.mention, role.name), immutable = True)
+                        return
+                    else:
+                        await ctx.author.add_roles(role, reason = "Added role through .rank command")
+                        await self.send_message(ctx.channel, "{} You've joined **{}**".format(member.mention, role.name), immutable = True)
+                        return
+                else:
+                    await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name), immutable = True)
+                return   
+
+        await self.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery), immutable = True)
+
     #===Utility===#
 
     async def send_message(self, channel, message: str, overwrite: bool = False, immutable: bool = False):
