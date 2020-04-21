@@ -123,8 +123,10 @@ class Public(commands.Cog):
 
         for role in roles[1:]:
             if role.colour.value == 0:
-                spaces = " " * (longestName + 1 - len(role.name))
-                outString += "{}{}- {} members\n".format(role.name, spaces, len(role.members))
+                numOfMembers = str(len(role.members))
+                nameSpaces = " " * (longestName + 1 - len(role.name))
+                numSpaces = " " * (3 - len(numOfMembers))
+                outString += "{}{}-{}{} members\n".format(role.name, nameSpaces, numSpaces, numOfMembers)
 
         await self.send_message(ctx.channel, "```{}```".format(outString))
     
