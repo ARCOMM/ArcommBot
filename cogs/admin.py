@@ -53,11 +53,13 @@ class Admin(commands.Cog):
     @commands.command(aliases = ["addrole"])
     @commands.check(is_admin)
     async def addrank(self, ctx, *args):
+        '''Create a new role'''
+
         roleQuery = " ".join(args)
         member = ctx.author
         roles = member.guild.roles
 
-        for role in roles:
+        for role in roles[1:]:
             if role.name.lower() == roleQuery.lower():
                 await self.send_message(ctx.channel, "{} Role **{}** already exists".format(member.mention, role.name))
                 return
@@ -68,13 +70,16 @@ class Admin(commands.Cog):
     @commands.command(aliases = ["removerole"])
     @commands.check(is_admin)
     async def removerank(self, ctx, *args):
+        '''Remove an existing role'''
+
         roleQuery = " ".join(args)
         member = ctx.author
         roles = member.guild.roles
 
-        for role in roles:
+        for role in roles[1:]:
             if role.name.lower() == roleQuery.lower():
-                if role.name in RESERVED_ROLES:
+                if not (role.colour.value == 0):
+                #if role.name in RESERVED_ROLES:
                     await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
                     return
 
@@ -96,6 +101,8 @@ class Admin(commands.Cog):
         await self.attend.send_message(ctx.channel, "pvp", "pvp post", reaction = True)
         await self.attend.send_message(ctx.channel, "coop1", "coop1 post", reaction = True)
         await self.attend.send_message(ctx.channel, "coop2", "coop2 post", reaction = True)
+
+    #===Utility===#
 
     async def send_message(self, channel, message: str):
         """Send a message to the text channel"""

@@ -91,7 +91,8 @@ class Public(commands.Cog):
 
         for role in roles:
             if role.name.lower() == roleQuery.lower():
-                if not (role.name in RESERVED_ROLES):
+                if role.colour.value == 0:
+                #if not (role.name in RESERVED_ROLES):
                     if role in member.roles:
                         await member.remove_roles(role, reason = "Removed role through .rank command")
                         await self.send_message(ctx.channel, "{} You've left **{}**".format(member.mention, role.name))
@@ -106,6 +107,25 @@ class Public(commands.Cog):
 
         await self.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
 
+    @commands.command(alises = ['roles'])
+    async def ranks(self, ctx):
+        member = ctx.author
+        roles = member.guild.roles
+        outString = ""
+        longestName = 0
+
+        for role in roles[1:]:
+            if role.colour.value == 0:
+                if len(role.name) > longestName:
+                    longestName = len(role.name)
+
+        for role in roles[1:]:
+            if role.colour.value == 0:
+                spaces = " " * (longestName + 1 - len(role.name))
+                outString += "{}{}- {} members\n".format(role.name, spaces, len(role.members))
+
+        await self.send_message(ctx.channel, "```{}```".format(outString))
+    
     #===Utility===#
 
     async def send_message(self, channel, message: str):
@@ -117,13 +137,15 @@ class Public(commands.Cog):
         return newMessage
 
     def formatDt(self, dt):
+        # TODO: s not removed on +1/-1 messages as time unit's aren't modified
         timeUnits = [[dt.days, "days"], [dt.seconds//3600, "hours"], [(dt.seconds//60) % 60, "minutes"]]
 
         for unit in timeUnits:
+            print(unit)
             if unit[0] == 0:
                 timeUnits.remove(unit)
             elif unit[0] == 1: # Remove s from end of word if singular
-                unit[1] = unit[1][:-1]
+                unit[1] = unit[1][:-1] 
 
         dtString = ""
         i = 0
