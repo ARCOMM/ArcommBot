@@ -12,16 +12,18 @@ class Attendance():
                          "pvp" : None,
                          "coop1" : None,
                          "coop2" : None}
-        self.reactions = {"pvp" : None,
-                          "coop1" : None,
-                          "coop2" : None}
     
     async def send_message(self, channel, name, message, reaction = False):
         newMessage = await channel.send(message)
         self.messages[name] = newMessage
 
         if reaction:
-            self.reactions[name] = await newMessage.add_reaction("\N{THUMBS UP SIGN}")
+            await newMessage.add_reaction("\N{THUMBS UP SIGN}")
+
+    async def delete_messages(self):
+        for message in self.messages.items():
+            if message[1] != None:
+                await message[1].delete()
 
 class Admin(commands.Cog):
     def __init__(self, bot):
@@ -33,7 +35,7 @@ class Admin(commands.Cog):
     async def _reload(self, ctx, ext: str):
         try:
             self.bot.reload_extension("cogs." + ext)
-            print("Reloaded {} extension\n".format(ext))
+            print("\nReloaded {} extension".format(ext))
         except Exception as e:
             print("Failed to reload {} extension\n".format(ext))
             print(e)
@@ -47,6 +49,9 @@ class Admin(commands.Cog):
     @commands.command()
     @commands.check(is_admin)
     async def attendance(self, ctx):
+        if self.attend != None:
+            await self.attend.delete_messages()
+
         self.attend = Attendance(ctx.channel)
         await self.attend.send_message(ctx.channel, "intro", "@here intro\nReact to show planned attendance")
         await self.attend.send_message(ctx.channel, "pvp", "pvp post", reaction = True)
