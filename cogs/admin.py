@@ -1,4 +1,8 @@
+import os
+
 from discord.ext import commands
+
+RESERVED_ROLES = os.getenv('RESERVED_ROLES')
 
 def is_admin(ctx):
     if ctx.author.id == 173123135321800704: 
@@ -46,8 +50,43 @@ class Admin(commands.Cog):
     async def _shutdown(self, ctx):
         exit()
 
-    @commands.command()
+    @commands.command(aliases = ["addrole"])
     @commands.check(is_admin)
+    async def addrank(self, ctx, *args):
+        roleQuery = " ".join(args)
+        member = ctx.author
+        roles = member.guild.roles
+
+        for role in roles:
+            if role.name.lower() == roleQuery.lower():
+                await self.send_message(ctx.channel, "{} Role **{}** already exists".format(member.mention, role.name))
+                return
+
+        await member.guild.create_role(name = roleQuery, reason = "Created role through .addrank")
+        await self.send_message(ctx.channel, "{} Created role **{}**".format(member.mention, roleQuery))
+
+    @commands.command(aliases = ["removerole"])
+    @commands.check(is_admin)
+    async def removerank(self, ctx, *args):
+        roleQuery = " ".join(args)
+        member = ctx.author
+        roles = member.guild.roles
+
+        for role in roles:
+            if role.name.lower() == roleQuery.lower():
+                if role.name in RESERVED_ROLES:
+                    await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
+                    return
+
+                await role.delete(reason = "Removed role through .removerank")
+                await self.send_message(ctx.channel, "{} Removed role **{}**".format(member.mention, role.name))
+                return
+
+        await self.send_message(ctx.channel, "{} Role **{}** doesn't exist".format(member.mention, roleQuery))
+    
+    @commands.command()
+    @commands.is_owner()
+    #@commands.check(is_admin)
     async def attendance(self, ctx):
         if self.attend != None:
             await self.attend.delete_messages()
@@ -57,6 +96,14 @@ class Admin(commands.Cog):
         await self.attend.send_message(ctx.channel, "pvp", "pvp post", reaction = True)
         await self.attend.send_message(ctx.channel, "coop1", "coop1 post", reaction = True)
         await self.attend.send_message(ctx.channel, "coop2", "coop2 post", reaction = True)
+
+    async def send_message(self, channel, message: str):
+        """Send a message to the text channel"""
+
+        await channel.trigger_typing()
+        newMessage = await channel.send(message)
+
+        return newMessage
 
 
 def setup(bot):
