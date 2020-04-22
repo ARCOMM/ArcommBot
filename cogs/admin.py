@@ -1,6 +1,10 @@
 import os
+from datetime import datetime, timedelta
 
-from discord.ext import commands
+from discord.ext import commands, tasks
+
+STAFF_CHANNEL = int(os.getenv('STAFF_CHANNEL'))
+ADMIN_ROLE = int(os.getenv('ADMIN_ROLE'))
 
 def is_admin(ctx):
     if ctx.author.id == 173123135321800704: 
@@ -10,7 +14,7 @@ def is_admin(ctx):
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.attend = None
+        self.recruitTask.start()
     
     @commands.command(name = "reload", hidden = True)
     @commands.is_owner()
@@ -76,6 +80,37 @@ class Admin(commands.Cog):
 
         return newMessage
 
+    async def recruitmentPost(self):
+        channel = self.bot.get_channel(STAFF_CHANNEL)
+        recruitPost = open('recruit_post.md', 'r').read()
+        introString = "Post recruitment on https://www.reddit.com/r/FindAUnit"
+        outString = "<@&{}> {}\n```{}```".format(ADMIN_ROLE, introString, recruitPost)
+
+        await self.send_message(channel, outString)
+    
+    #===Tasks===#
+
+    @tasks.loop(hours = 24)
+    async def recruitTask(self):
+        targetDays = [0, 2, 5] #Monday, Wednesday, Saturday
+
+        now = datetime.utcnow()
+        if now.weekday() in targetDays:
+            await self.recruitmentPost()
+
+    @recruitTask.before_loop
+    async def before_recruitTask(self):
+        targetHour = 17
+        targetMinute = 0
+        
+        now = datetime.utcnow()
+        future = datetime(now.year, now.month, now.day, targetHour, targetMinute)
+
+        if now.hour >= targetHour and now.minute > targetMinute:
+            future += timedelta(days = 1)
+
+        await asyncio.sleep((future - now).seconds)
+        
 
 def setup(bot):
     bot.add_cog(Admin(bot))
