@@ -1,4 +1,5 @@
 import os
+import asyncio
 from datetime import datetime, timedelta
 
 from discord.ext import commands, tasks
@@ -82,7 +83,7 @@ class Admin(commands.Cog):
 
     async def recruitmentPost(self):
         channel = self.bot.get_channel(STAFF_CHANNEL)
-        recruitPost = open('recruit_post.md', 'r').read()
+        recruitPost = open('resources/recruit_post.md', 'r').read()
         introString = "Post recruitment on https://www.reddit.com/r/FindAUnit"
         outString = "<@&{}> {}\n```{}```".format(ADMIN_ROLE, introString, recruitPost)
 
@@ -92,9 +93,11 @@ class Admin(commands.Cog):
 
     @tasks.loop(hours = 24)
     async def recruitTask(self):
+        print('Recruit task')
         targetDays = [0, 2, 5] #Monday, Wednesday, Saturday
 
         now = datetime.utcnow()
+        #now = datetime(2020, 4, 22) #A wednesday
         if now.weekday() in targetDays:
             await self.recruitmentPost()
 
@@ -104,6 +107,7 @@ class Admin(commands.Cog):
         targetMinute = 0
         
         now = datetime.utcnow()
+        #now = datetime(now.year, now.month, now.day, 16, 59, 55)
         future = datetime(now.year, now.month, now.day, targetHour, targetMinute)
 
         if now.hour >= targetHour and now.minute > targetMinute:
