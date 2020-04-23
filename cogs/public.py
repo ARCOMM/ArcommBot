@@ -18,6 +18,7 @@ class Public(commands.Cog):
         dt = self.timeUntil("opday")
         dt = self.formatDt(dt)        
         outString = "There {} until opday!".format(dt)
+        
         await self.send_message(ctx.channel, outString)
 
     @commands.command()
@@ -112,18 +113,20 @@ class Public(commands.Cog):
         roles = member.guild.roles
         outString = ""
         longestName = 0
+        roleList = []
 
         for role in roles[1:]:
             if role.colour.value == 0:
+                roleList.append(role)
                 if len(role.name) > longestName:
                     longestName = len(role.name)
 
-        for role in roles[1:]:
-            if role.colour.value == 0:
-                numOfMembers = str(len(role.members))
-                nameSpaces = " " * (longestName + 1 - len(role.name))
-                numSpaces = " " * (3 - len(numOfMembers))
-                outString += "{}{}-{}{} members\n".format(role.name, nameSpaces, numSpaces, numOfMembers)
+        roleList.sort(key = self.roleListKey)
+        for role in roleList:
+            numOfMembers = str(len(role.members))
+            nameSpaces = " " * (longestName + 1 - len(role.name))
+            numSpaces = " " * (3 - len(numOfMembers))
+            outString += "{}{}-{}{} members\n".format(role.name, nameSpaces, numSpaces, numOfMembers)
 
         await self.send_message(ctx.channel, "```{}```".format(outString))
     
@@ -185,6 +188,9 @@ class Public(commands.Cog):
 
         return opday - today
 
+    def roleListKey(self, elem):
+        return elem.name.lower()
+    
     #===Listeners===#
 
     @commands.Cog.listener()
