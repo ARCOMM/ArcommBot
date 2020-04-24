@@ -4,8 +4,9 @@ from datetime import datetime, timedelta
 
 from discord.ext import commands, tasks
 
-STAFF_CHANNEL = int(os.getenv('STAFF_CHANNEL'))
+ADMIN_CHANNEL = int(os.getenv('ADMIN_CHANNEL'))
 ADMIN_ROLE = int(os.getenv('ADMIN_ROLE'))
+STAFF_CHANNEL = int(os.getenv('STAFF_CHANNEL'))
 
 def is_admin(ctx):
     if ctx.author.id == 173123135321800704: 
@@ -15,6 +16,7 @@ def is_admin(ctx):
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.attendanceTask.start()
         self.recruitTask.start()
     
     @commands.command(name = "reload", hidden = True)
@@ -110,7 +112,6 @@ class Admin(commands.Cog):
                 await self.send_message(ctx.channel, "{} {}".format(ctx.author.mention, "File must be called recruit_post.md"))
                 return
 
-    
     #===Utility===#
 
     async def send_message(self, channel, message: str):
@@ -121,6 +122,12 @@ class Admin(commands.Cog):
 
         return newMessage
 
+    async def attendancePost(self):
+        channel = self.bot.get_channel(ADMIN_CHANNEL)
+        outString = "<@&{}> Collect attendance!".format(ADMIN_ROLE)
+
+        await self.send_message(channel, outString)
+            
     async def recruitmentPost(self):
         channel = self.bot.get_channel(STAFF_CHANNEL)
         recruitPost = open('resources/recruit_post.md', 'r').read()
@@ -131,17 +138,39 @@ class Admin(commands.Cog):
     
     #===Tasks===#
 
+    @tasks.loop(hours = 1)
+    async def attendanceTask(self):
+        targetTimeslot = [17, 21] #5pm -> 9pm
+
+        now = datetime.utcnow()
+        #now = datetime(2020, 4, 25, 17)
+        if now.weekday() == 5: #Saturday
+            if now.hour >= targetTimeslot[0] and now.hour <= targetTimeslot[1]:
+                await self.attendancePost()
+
+    @attendanceTask.before_loop
+    async def before_attendanceTask(self):
+        """Sync up attendanceTask to on the hour"""
+
+        now = datetime.utcnow()
+        now = datetime(now.year, now.month, now.day, 16, 59, 55)
+        future = datetime(now.year, now.month, now.day, now.hour + 1)
+
+        await asyncio.sleep((future - now).seconds)
+    
     @tasks.loop(hours = 24)
     async def recruitTask(self):
         targetDays = [0, 2, 4] #Monday, Wednesday, Friday
 
         now = datetime.utcnow()
-        #now = datetime(2020, 4, 22) #A wednesday
+        #now = datetime(2020, 4, 22) #A Wednesday
         if now.weekday() in targetDays:
             await self.recruitmentPost()
 
     @recruitTask.before_loop
     async def before_recruitTask(self):
+        """Sync up recruitTask to targetHour:targetMinute:00"""
+
         targetHour = 17
         targetMinute = 0
         
