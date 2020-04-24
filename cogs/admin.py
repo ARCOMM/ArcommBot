@@ -71,6 +71,46 @@ class Admin(commands.Cog):
 
         await self.send_message(ctx.channel, "{} Role **{}** doesn't exist".format(member.mention, roleQuery))
 
+    @commands.command()
+    @commands.check(is_admin)
+    async def recruitpost(self, ctx):
+        """Return or overwrite the recruitment post
+        
+        Usage:
+            .recruitpost   
+            -- Output contents of resources/recruit_post.md
+            .recruitpost <<with attached file called recruit_post.md>>
+            -- Overwrites resources/recruit_post.md, a backup is saved as resources/recruit_post.bak"""
+
+        attachments = ctx.message.attachments
+
+        if attachments == []:
+            recruitPost = open('resources/recruit_post.md', 'r').read()
+            introString = "Post recruitment on https://www.reddit.com/r/FindAUnit"
+            outString = "{}\n```{}```".format(introString, recruitPost)
+
+            await self.send_message(ctx.channel, outString)
+        else:
+            newRecruitPost = attachments[0]
+            if newRecruitPost.filename == "recruit_post.md":
+                try:
+                    os.remove("resources/recruit_post.bak")
+                except FileNotFoundError as e:
+                    print("No recruit_post.bak exists, can't remove")
+
+                try:
+                    os.rename("resources/recruit_post.md", "resources/recruit_post.bak")
+                except FileNotFoundError as e:
+                    print("No recruit_post.md exists, can't backup")
+
+                await newRecruitPost.save("resources/recruit_post.md")
+                await self.send_message(ctx.channel, "{} {}".format(ctx.author.mention, "Recruitment post has been updated"))
+                return
+            else:
+                await self.send_message(ctx.channel, "{} {}".format(ctx.author.mention, "File must be called recruit_post.md"))
+                return
+
+    
     #===Utility===#
 
     async def send_message(self, channel, message: str):
@@ -93,8 +133,7 @@ class Admin(commands.Cog):
 
     @tasks.loop(hours = 24)
     async def recruitTask(self):
-        print('Recruit task')
-        targetDays = [0, 2, 5] #Monday, Wednesday, Saturday
+        targetDays = [0, 2, 4] #Monday, Wednesday, Friday
 
         now = datetime.utcnow()
         #now = datetime(2020, 4, 22) #A wednesday
