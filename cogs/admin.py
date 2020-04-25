@@ -29,6 +29,17 @@ class Admin(commands.Cog):
         self.modcheckTask.start()
         self.recruitTask.start()
     
+    @commands.command(name = "logs", hidden = True)
+    @commands.is_owner()
+    async def _logs(self, ctx):
+        #TODO: Send entirety of logs folder
+        logger.debug(".logs called")
+
+        discordLog = File("logs/discord.log", filename = "discord.log")
+        botLog = File("logs/bot.log", filename = "bot.log")
+        await self.send_message(ctx.channel, "Discord log", discordLog)
+        await self.send_message(ctx.channel, "Bot log", botLog)
+    
     @commands.command(name = "reload", hidden = True)
     @commands.is_owner()
     async def _reload(self, ctx, ext: str):
