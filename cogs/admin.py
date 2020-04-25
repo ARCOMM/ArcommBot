@@ -210,6 +210,41 @@ class Admin(commands.Cog):
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
     
+    async def handleSteam(self):
+        steamUrl = 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' # https://partner.steamgames.com/doc/webapi/ISteamRemoteStorage
+        lastModified = {}
+
+        with open('resources/last_modified.json', 'r') as f:
+            lastModified = json.load(f)
+
+        data = {'itemcount': len(config['steam'])}
+
+        i = 0
+        for modId in config['steam']:
+            data["publishedfileids[{}]".format(str(i))] = config['steam'][modId]
+            i += 1    
+
+        async with self.session.post(steamUrl, data = data) as response:
+            if response.status == 200:
+                response = await response.json()
+                filedetails = response['response']['publishedfiledetails']
+
+                for mod in filedetails:
+                    modName = mod['title']
+                    timeUpdated = str(mod['time_updated'])
+
+                    if modName in lastModified['steam']:
+                        if timeUpdated != lastModified['steam'][modName]:
+                            lastModified['steam'][modName] = timeUpdated
+                            await self.updatePost(modName, "", 'https://steamcommunity.com/sharedfiles/filedetails/changelog/{}'.format(mod['publishedfileid']))
+                    else:
+                        lastModified['steam'][modName] = timeUpdated
+            else:
+                print("steam POST error: {} {} - {}".format(response.status, response.reason, await response.text()))
+            
+        with open('resources/last_modified.json', 'w') as f:
+            json.dump(lastModified, f)
+    
     #===Tasks===#
 
     @tasks.loop(hours = 1)
@@ -237,6 +272,7 @@ class Admin(commands.Cog):
         try:
             await self.handleGithub()
             await self.handleCup()
+            await self.handleSteam()
         except Exception as e:
             print(e)
 
