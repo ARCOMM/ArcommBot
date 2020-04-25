@@ -1,12 +1,19 @@
-import os
+import aiohttp
 import asyncio
+import configparser
 from datetime import datetime, timedelta
+import json
+import os
 
 from discord.ext import commands, tasks
+
+config = configparser.ConfigParser()
+config.read('resources/config.ini')
 
 ADMIN_CHANNEL = int(os.getenv('ADMIN_CHANNEL'))
 ADMIN_ROLE = int(os.getenv('ADMIN_ROLE'))
 STAFF_CHANNEL = int(os.getenv('STAFF_CHANNEL'))
+GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 
 def is_admin(ctx):
     if ctx.author.id == 173123135321800704: 
@@ -16,7 +23,9 @@ def is_admin(ctx):
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.session = aiohttp.ClientSession()
         self.attendanceTask.start()
+        self.modcheckTask.start()
         self.recruitTask.start()
     
     @commands.command(name = "reload", hidden = True)
@@ -136,6 +145,41 @@ class Admin(commands.Cog):
 
         await self.send_message(channel, outString)
     
+    async def updatePost(self, name, version, url):
+        channel = self.bot.get_channel(STAFF_CHANNEL)
+        outString = "<@&{}> **{}** has released a new version ({})\n{}".format(ADMIN_ROLE, name, version, url)
+
+        await self.send_message(channel, outString)
+    
+    async def handleGithub(self):
+        repoUrl = 'https://api.github.com/repos'
+        lastModified = {}
+
+        with open('resources/last_modified.json', 'r') as f:
+            lastModified = json.load(f)
+
+        for mod in config['github']:
+            print(mod)
+            url = "{}/{}/releases/latest".format(repoUrl, config['github'][mod])
+            if mod in lastModified:
+                headers = {'Authorization': GITHUB_TOKEN,
+                           'If-Modified-Since': lastModified[mod]}
+            else:
+                headers = {'Authorization': GITHUB_TOKEN}
+
+            async with self.session.get(url, headers = headers) as response:
+                if response.status == 200:
+                    lastModified[mod] = response.headers['Last-Modified']
+                    response = await response.json()
+                    await self.updatePost(mod, response['tag_name'], response['url'])
+                elif response.status == 304:
+                    print('304 not changed')
+                else:
+                    print("{} GET error: {} {} - {}".format(mod, response.status, response.reason, response.text))
+                
+        with open('resources/last_modified.json', 'w') as f:
+            json.dump(lastModified, f)
+    
     #===Tasks===#
 
     @tasks.loop(hours = 1)
@@ -158,6 +202,13 @@ class Admin(commands.Cog):
 
         await asyncio.sleep((future - now).seconds)
     
+    @tasks.loop(hours = 1)
+    async def modcheckTask(self):
+        try:
+            await self.handleGithub()
+        except Exception as e:
+            print(e)
+
     @tasks.loop(hours = 24)
     async def recruitTask(self):
         targetDays = [0, 2, 4] #Monday, Wednesday, Friday
