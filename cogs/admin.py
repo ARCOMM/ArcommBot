@@ -292,7 +292,7 @@ class Admin(commands.Cog):
     @tasks.loop(hours = 1)
     async def attendanceTask(self):
         logger.debug("attendanceTask called")
-        targetTimeslot = [17, 21] #5pm -> 9pm
+        targetTimeslot = [17, 20] #5pm -> 8pm
 
         now = datetime.utcnow()
         #now = datetime(2020, 4, 25, 17)
@@ -308,7 +308,7 @@ class Admin(commands.Cog):
 
         now = datetime.utcnow()
         #now = datetime(now.year, now.month, now.day, 16, 59, 55)
-        future = datetime(now.year, now.month, now.day, now.hour + 1)
+        future = datetime(now.year, now.month, now.day, now.hour + 1, 1)
         logger.debug("{} seconds until attendanceTask called".format((future - now).seconds))
 
         await asyncio.sleep((future - now).seconds)
