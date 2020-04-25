@@ -46,7 +46,7 @@ class Admin(commands.Cog):
         logger.debug(".reload called")
         try:
             self.bot.reload_extension("cogs." + ext)
-            logger.info("Reloaded {} extension".format(ext))
+            logger.info("=========Reloaded {} extension=========".format(ext))
             await self.send_message(ctx.channel, "Reloaded {} extension".format(ext))
         except Exception as e:
             logger.critical("Failed to reload {} extension".format(ext))
