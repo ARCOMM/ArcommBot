@@ -109,13 +109,7 @@ class Admin(commands.Cog):
         attachments = ctx.message.attachments
 
         if attachments == []:
-            logger.debug("No attachment")
-            recruitPost = File("resources/recruit_post.md", filename = "recruit_post.md")
-
-            logger.debug("Read resources/recruit_post.md")
-            introString = "Post recruitment on https://www.reddit.com/r/FindAUnit"
-
-            await self.send_message(ctx.channel, introString, file = recruitPost)
+            await self.recruitmentPost(ctx.channel)
         else:
             logger.debug("Found attachment")
             newRecruitPost = attachments[0]
@@ -148,9 +142,12 @@ class Admin(commands.Cog):
         """Send a message to the text channel"""
 
         await channel.trigger_typing()
-        newMessage = await channel.send(message, file = file)
-        
-        logger.info("Sent message to {} : {}".format(channel, newMessage))
+        if file != None:
+            newMessage = await channel.send(message, file = file)
+            logger.info("Sent message with file {} : {} : {}".format(channel, file.filename, newMessage))
+        else:
+            newMessage = await channel.send(message)
+            logger.info("Sent message to {} : {}".format(channel, newMessage))
 
         return newMessage
 
@@ -162,16 +159,15 @@ class Admin(commands.Cog):
 
         await self.send_message(channel, outString)
             
-    async def recruitmentPost(self):
+    async def recruitmentPost(self, channel):
         logger.debug("recruitmentPost called")
 
-        channel = self.bot.get_channel(STAFF_CHANNEL)
-        recruitPost = open('resources/recruit_post.md', 'r').read()
-        logger.debug("Read recruit_post.md")
-        introString = "Post recruitment on https://www.reddit.com/r/FindAUnit"
-        outString = "<@&{}> {}\n```{}```".format(ADMIN_ROLE, introString, recruitPost)
+        recruitPost = File("resources/recruit_post.md", filename = "recruit_post.md")
 
-        await self.send_message(channel, outString)
+        logger.debug("Read resources/recruit_post.md")
+        introString = "Post recruitment on https://www.reddit.com/r/FindAUnit"
+
+        await self.send_message(channel, introString, file = recruitPost)
     
     async def updatePost(self, name, version, url):
         logger.debug("updatePost called")
@@ -213,6 +209,7 @@ class Admin(commands.Cog):
             json.dump(lastModified, f)
     
     async def handleCup(self):
+        #TODO: Add "CUP" before mod name
         logger.debug("handleCup called")
         lastModified = {}
 
@@ -307,7 +304,6 @@ class Admin(commands.Cog):
         """Sync up attendanceTask to on the hour"""
         logger.debug("before_attendanceTask called")
 
-
         now = datetime.utcnow()
         #now = datetime(now.year, now.month, now.day, 16, 59, 55)
         future = datetime(now.year, now.month, now.day, now.hour + 1)
@@ -317,6 +313,8 @@ class Admin(commands.Cog):
     
     @tasks.loop(hours = 1)
     async def modcheckTask(self):
+        #TODO: Ping once for each website, not for each post
+        #TODO: Use <> to remove link popups
         logger.debug("modcheckTask called")
         try:
             await self.handleGithub()
@@ -324,7 +322,7 @@ class Admin(commands.Cog):
             await self.handleSteam()
         except Exception as e:
             logger.error(e)
-
+    
     @tasks.loop(hours = 24)
     async def recruitTask(self):
         logger.debug("recruitTask called")
@@ -334,7 +332,8 @@ class Admin(commands.Cog):
         #now = datetime(2020, 4, 22) #A Wednesday
         if now.weekday() in targetDays:
             logger.debug("Called within targetDays")
-            await self.recruitmentPost()
+            channel = self.bot.get_channel(STAFF_CHANNEL)
+            await self.recruitmentPost(channel)
 
     @recruitTask.before_loop
     async def before_recruitTask(self):

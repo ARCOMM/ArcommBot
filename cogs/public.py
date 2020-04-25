@@ -92,6 +92,7 @@ class Public(commands.Cog):
     async def rank(self, ctx, *args):
         """Join or leave a non-reserved role"""
         # TODO: Fix message if rank is empty
+        # TODO: Autocomplete, possibly ignore blankspace
         logger.debug(".rank called")
 
         roleQuery = " ".join(args)
