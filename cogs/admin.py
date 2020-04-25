@@ -32,13 +32,13 @@ class Admin(commands.Cog):
     @commands.command(name = "logs", hidden = True)
     @commands.is_owner()
     async def _logs(self, ctx):
-        #TODO: Send entirety of logs folder
+        #TODO: Send entirety of logs folder //client.send(files) seems broken
         logger.debug(".logs called")
 
         discordLog = File("logs/discord.log", filename = "discord.log")
         botLog = File("logs/bot.log", filename = "bot.log")
-        await self.send_message(ctx.channel, "Discord log", discordLog)
-        await self.send_message(ctx.channel, "Bot log", botLog)
+        await ctx.channel.send("Discord log", file = File("logs/discord.log", filename = "discord.log"))
+        await ctx.channel.send("Bot log", file = File("logs/bot.log", filename = "bot.log"))
     
     @commands.command(name = "reload", hidden = True)
     @commands.is_owner()
@@ -149,16 +149,12 @@ class Admin(commands.Cog):
 
     #===Utility===#
 
-    async def send_message(self, channel, message: str, file = None):
+    async def send_message(self, channel, message: str):
         """Send a message to the text channel"""
 
         await channel.trigger_typing()
-        if file != None:
-            newMessage = await channel.send(message, file = file)
-            logger.info("Sent message with file {} : {} : {}".format(channel, file.filename, newMessage))
-        else:
-            newMessage = await channel.send(message)
-            logger.info("Sent message to {} : {}".format(channel, newMessage))
+        newMessage = await channel.send(message)
+        logger.info("Sent message to {} : {}".format(channel, newMessage))
 
         return newMessage
 
@@ -172,13 +168,9 @@ class Admin(commands.Cog):
             
     async def recruitmentPost(self, channel):
         logger.debug("recruitmentPost called")
-
-        recruitPost = File("resources/recruit_post.md", filename = "recruit_post.md")
-
-        logger.debug("Read resources/recruit_post.md")
-        introString = "Post recruitment on https://www.reddit.com/r/FindAUnit"
-
-        await self.send_message(channel, introString, file = recruitPost)
+        introString = "Post recruitment on <https://www.reddit.com/r/FindAUnit>"
+        
+        await channel.send(introString, file = File("resources/recruit_post.md", filename = "recruit_post.md"))
     
     async def updatePost(self, name, version, url):
         logger.debug("updatePost called")
