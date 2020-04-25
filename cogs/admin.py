@@ -1,9 +1,11 @@
 import aiohttp
 import asyncio
+from bs4 import BeautifulSoup
 import configparser
 from datetime import datetime, timedelta
 import json
 import os
+import re
 
 from discord.ext import commands, tasks
 
@@ -161,22 +163,50 @@ class Admin(commands.Cog):
         for mod in config['github']:
             print(mod)
             url = "{}/{}/releases/latest".format(repoUrl, config['github'][mod])
-            if mod in lastModified:
+            if mod in lastModified['github']:
                 headers = {'Authorization': GITHUB_TOKEN,
-                           'If-Modified-Since': lastModified[mod]}
+                           'If-Modified-Since': lastModified['github'][mod]}
             else:
                 headers = {'Authorization': GITHUB_TOKEN}
 
             async with self.session.get(url, headers = headers) as response:
-                if response.status == 200:
-                    lastModified[mod] = response.headers['Last-Modified']
+                if response.status == 200: #Repo has been updated
+                    lastModified['github'][mod] = response.headers['Last-Modified']
                     response = await response.json()
                     await self.updatePost(mod, response['tag_name'], response['url'])
-                elif response.status == 304:
+                elif response.status == 304: #Repo hasn't been updated
                     print('304 not changed')
                 else:
                     print("{} GET error: {} {} - {}".format(mod, response.status, response.reason, response.text))
                 
+        with open('resources/last_modified.json', 'w') as f:
+            json.dump(lastModified, f)
+    
+    async def handleCup(self):
+        lastModified = {}
+
+        with open('resources/last_modified.json', 'r') as f:
+            lastModified = json.load(f)
+
+        async with self.session.get('http://cup-arma3.org/download') as response:
+            if response.status == 200:
+                soup = BeautifulSoup(await response.text(), features = "lxml")
+                for row in soup.find('table', {'class': 'table'}).find_all('tr'):
+                    td = row.find('td')
+                    if td:
+                        version = re.search(' ([0-9.]+)(\S+)?', td.text).group(0)
+                        name = re.sub(version, '', td.text)
+                        version = version[1:] # Remove whitespace
+                        
+                        if name in lastModified['cup']:
+                            if version != lastModified['cup'][name]:
+                                lastModified['cup'][name] = version
+                                await self.updatePost(name, version, 'http://cup-arma3.org/download')
+                        else:
+                            lastModified['cup'][name] = version
+            else:
+                print("cup GET error: {} {} - {}".format(response.status, response.reason, await response.text()))
+        
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
     
@@ -206,6 +236,7 @@ class Admin(commands.Cog):
     async def modcheckTask(self):
         try:
             await self.handleGithub()
+            await self.handleCup()
         except Exception as e:
             print(e)
 
