@@ -1,9 +1,12 @@
 from datetime import datetime, timedelta
+import logging
 from pytz import timezone, UnknownTimeZoneError
 import os
 
 import discord
 from discord.ext import commands
+
+logger = logging.getLogger('bot')
 
 class Public(commands.Cog):
     def __init__(self, bot):
@@ -14,6 +17,7 @@ class Public(commands.Cog):
     @commands.command()
     async def opday(self, ctx):
         """Time left until opday (Saturday optime)"""
+        logger.debug(".opday called")
 
         dt = self.timeUntil("opday")
         dt = self.formatDt(dt)        
@@ -32,11 +36,12 @@ class Public(commands.Cog):
             optime -x timezone
             Timezones can be: CET or Europe/London or US/Pacific etc.
         """
-        
+        logger.debug(".optime called")
+
         try:
             modifier = int(modifier)
         except Exception as e:
-            print(".optime modifier was not an int, assume timezone")
+            logger.debug(".optime modifier was not an int, assume timezone")
             timez = modifier
             modifier = 0
 
@@ -57,6 +62,7 @@ class Public(commands.Cog):
                 localTime = localTime.astimezone(timez)
                 outString += "\n({}:00:00 {})".format(localTime.hour, timez.zone)
             except UnknownTimeZoneError as e:
+                logger.debug("Invalid timezone: {}".format(timezone))
                 await self.send_message(ctx.channel, "Invalid timezone")
                 return
 
@@ -65,6 +71,7 @@ class Public(commands.Cog):
     @commands.command(aliases = ['daylightsavings'])
     async def dst(self, ctx):
         """Check if DST has started"""
+        logger.debug(".dst called")
 
         timez = timezone("Europe/London")
         outString = "DST is in effect" if datetime.now(timez).dst() else "DST is ***not*** in effect"
@@ -74,6 +81,7 @@ class Public(commands.Cog):
     @commands.command(aliases = ['utc'])
     async def zulu(self, ctx):
         '''Return Zulu (UTC) time'''
+        logger.debug(".zulu called")
 
         now = datetime.utcnow()
         outString = "It is currently {}:{}:{} Zulu time (UTC)".format(now.hour, now.minute, now.second)
@@ -83,6 +91,9 @@ class Public(commands.Cog):
     @commands.command(aliases = ['role'])
     async def rank(self, ctx, *args):
         """Join or leave a non-reserved role"""
+        # TODO: Fix message if rank is empty
+        # TODO: Autocomplete, possibly ignore blankspace
+        logger.debug(".rank called")
 
         roleQuery = " ".join(args)
         member = ctx.author
@@ -93,21 +104,26 @@ class Public(commands.Cog):
                 if role.colour.value == 0:
                     if role in member.roles:
                         await member.remove_roles(role, reason = "Removed role through .rank command")
+                        logger.info("Removed '{} from '{}' role".format(ctx.author.name, role.name))
                         await self.send_message(ctx.channel, "{} You've left **{}**".format(member.mention, role.name))
                         return
                     else:
-                        await ctx.author.add_roles(role, reason = "Added role through .rank command")
+                        await member.add_roles(role, reason = "Added role through .rank command")
+                        logger.info("Added '{} to '{}' role".format(ctx.author.name, role.name))
                         await self.send_message(ctx.channel, "{} You've joined **{}**".format(member.mention, role.name))
                         return
                 else:
+                    logger.info("Role '{}' is a reserved role".format(role.name))
                     await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
-                return   
+                return
 
+        logger.info("Role '{}' does not exist".format(roleQuery))
         await self.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
 
     @commands.command(aliases = ['roles'])
     async def ranks(self, ctx):
         """Return a list of joinable ranks"""
+        logger.debug(".ranks called")
 
         member = ctx.author
         roles = member.guild.roles
@@ -138,10 +154,13 @@ class Public(commands.Cog):
         await channel.trigger_typing()
         newMessage = await channel.send(message)
 
+        logger.info("Sent message to {} : {}".format(channel, newMessage))
+
         return newMessage
 
     def formatDt(self, dt):
         # TODO: s not removed on +1/-1 messages as time unit's aren't modified
+        logger.debug("formatDt called")
         timeUnits = [[dt.days, "days"], [dt.seconds//3600, "hours"], [(dt.seconds//60) % 60, "minutes"]]
 
         for unit in timeUnits:
@@ -173,6 +192,8 @@ class Public(commands.Cog):
         return "{} {}".format(isAre, dtString)
     
     def timeUntil(self, time = "opday", modifier = 0):
+        logger.debug("timeUntil called with time = {}".format(time))
+
         today = datetime.now(tz = timezone('Europe/London'))
         opday = None
 
