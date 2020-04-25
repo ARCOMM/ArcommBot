@@ -173,7 +173,7 @@ class Admin(commands.Cog):
                 if response.status == 200: #Repo has been updated
                     lastModified['github'][mod] = response.headers['Last-Modified']
                     response = await response.json()
-                    await self.updatePost(mod, response['tag_name'], response['url'])
+                    await self.updatePost(mod, response['tag_name'], response['html_url'])
                 elif response.status == 304: #Repo hasn't been updated
                     print('304 not changed')
                 else:
