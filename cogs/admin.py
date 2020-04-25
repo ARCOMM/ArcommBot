@@ -199,7 +199,7 @@ class Admin(commands.Cog):
                     logger.info("Response 200 Success: {}".format(mod))
                     lastModified['github'][mod] = response.headers['Last-Modified']
                     response = await response.json()
-                    await self.updatePost(mod, response['tag_name'], response['html_url'])
+                    await self.updatePost(mod, response['tag_name'], "<{}>".format(response['html_url']))
                 elif response.status == 304: #Repo hasn't been updated
                     logger.info("Response 304 - Not Changed: {}".format(mod))
                 else:
@@ -209,7 +209,6 @@ class Admin(commands.Cog):
             json.dump(lastModified, f)
     
     async def handleCup(self):
-        #TODO: Add "CUP" before mod name
         logger.debug("handleCup called")
         lastModified = {}
 
@@ -232,7 +231,7 @@ class Admin(commands.Cog):
                                 logger.info("Mod '{}' has been updated".format(name))
 
                                 lastModified['cup'][name] = version
-                                await self.updatePost(name, version, 'http://cup-arma3.org/download')
+                                await self.updatePost("CUP - {}".format(name), version, '<http://cup-arma3.org/download>')
                             else:
                                 logger.info("Mod '{}' has not been updated".format(name))
                         else:
@@ -274,7 +273,7 @@ class Admin(commands.Cog):
                             logger.info("Mod '{}' has been updated".format(modName))
 
                             lastModified['steam'][modName] = timeUpdated
-                            await self.updatePost(modName, "", 'https://steamcommunity.com/sharedfiles/filedetails/changelog/{}'.format(mod['publishedfileid']))
+                            await self.updatePost(modName, "", '<https://steamcommunity.com/sharedfiles/filedetails/changelog/{}>'.format(mod['publishedfileid']))
                         else:
                             logger.info("Mod '{}' has not been updated".format(modName))
                     else:
@@ -314,7 +313,6 @@ class Admin(commands.Cog):
     @tasks.loop(hours = 1)
     async def modcheckTask(self):
         #TODO: Ping once for each website, not for each post
-        #TODO: Use <> to remove link popups
         logger.debug("modcheckTask called")
         try:
             await self.handleGithub()
