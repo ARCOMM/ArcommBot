@@ -12,12 +12,12 @@ from discord.ext import commands, tasks
 config = configparser.ConfigParser()
 config.read('resources/config.ini')
 
-ADMIN_CHANNEL = int(os.getenv('ADMIN_CHANNEL'))
-ADMIN_ROLE = int(os.getenv('ADMIN_ROLE'))
-STAFF_CHANNEL = int(os.getenv('STAFF_CHANNEL'))
+ADMIN_CHANNEL = int(config['discord']['admin_channel'])
+ADMIN_ROLE = int(config['discord']['admin_role'])
+STAFF_CHANNEL = int(config['discord']['staff_channel'])
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 
-def is_admin(ctx):
+def is_staff(ctx):
     if ctx.author.id == 173123135321800704: 
         return True
     return ctx.author.has_role("Staff")
@@ -47,7 +47,7 @@ class Admin(commands.Cog):
         exit()
 
     @commands.command(aliases = ["addrole"])
-    @commands.check(is_admin)
+    @commands.check(is_staff)
     async def addrank(self, ctx, *args):
         '''Create a new role'''
 
@@ -64,7 +64,7 @@ class Admin(commands.Cog):
         await self.send_message(ctx.channel, "{} Created role **{}**".format(member.mention, roleQuery))
 
     @commands.command(aliases = ["removerole"])
-    @commands.check(is_admin)
+    @commands.check(is_staff)
     async def removerank(self, ctx, *args):
         '''Remove an existing role'''
 
@@ -85,7 +85,7 @@ class Admin(commands.Cog):
         await self.send_message(ctx.channel, "{} Role **{}** doesn't exist".format(member.mention, roleQuery))
 
     @commands.command()
-    @commands.check(is_admin)
+    @commands.check(is_staff)
     async def recruitpost(self, ctx):
         """Return or overwrite the recruitment post
         
