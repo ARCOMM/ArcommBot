@@ -8,6 +8,7 @@ import logging
 import os
 import re
 
+from discord import File
 from discord.ext import commands, tasks
 
 logger = logging.getLogger('bot')
@@ -19,11 +20,6 @@ ADMIN_CHANNEL = int(config['discord']['admin_channel'])
 ADMIN_ROLE = int(config['discord']['admin_role'])
 STAFF_CHANNEL = int(config['discord']['staff_channel'])
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
-
-def is_staff(ctx):
-    #if ctx.author.id == 173123135321800704: 
-    #    return True
-    return ctx.author.has_role("Staff")
 
 class Admin(commands.Cog):
     def __init__(self, bot):
@@ -52,7 +48,7 @@ class Admin(commands.Cog):
         exit()
 
     @commands.command(aliases = ["addrole"])
-    @commands.check(is_staff)
+    @commands.has_role("Staff")
     async def addrank(self, ctx, *args):
         '''Create a new role'''
         logger.debug(".addrank called")
@@ -72,7 +68,7 @@ class Admin(commands.Cog):
         await self.send_message(ctx.channel, "{} Created role **{}**".format(member.mention, roleQuery))
 
     @commands.command(aliases = ["removerole"])
-    @commands.check(is_staff)
+    @commands.has_role("Staff")
     async def removerank(self, ctx, *args):
         '''Remove an existing role'''
         logger.debug('.removerank called')
@@ -98,7 +94,7 @@ class Admin(commands.Cog):
         await self.send_message(ctx.channel, "{} Role **{}** doesn't exist".format(member.mention, roleQuery))
 
     @commands.command()
-    @commands.check(is_staff)
+    @commands.has_role("Staff")
     async def recruitpost(self, ctx):
         """Return or overwrite the recruitment post
         
@@ -107,18 +103,19 @@ class Admin(commands.Cog):
             -- Output contents of resources/recruit_post.md
             .recruitpost <<with attached file called recruit_post.md>>
             -- Overwrites resources/recruit_post.md, a backup is saved as resources/recruit_post.bak"""
+        #TODO: If message is too long to send (HTTPException), send a file, otherwise send message
         logger.debug('.recruitpost called')
 
         attachments = ctx.message.attachments
 
         if attachments == []:
             logger.debug("No attachment")
-            recruitPost = open('resources/recruit_post.md', 'r').read()
+            recruitPost = File("resources/recruit_post.md", filename = "recruit_post.md")
+
             logger.debug("Read resources/recruit_post.md")
             introString = "Post recruitment on https://www.reddit.com/r/FindAUnit"
-            outString = "{}\n```{}```".format(introString, recruitPost)
 
-            await self.send_message(ctx.channel, outString)
+            await self.send_message(ctx.channel, introString, file = recruitPost)
         else:
             logger.debug("Found attachment")
             newRecruitPost = attachments[0]
@@ -147,11 +144,11 @@ class Admin(commands.Cog):
 
     #===Utility===#
 
-    async def send_message(self, channel, message: str):
+    async def send_message(self, channel, message: str, file = None):
         """Send a message to the text channel"""
 
         await channel.trigger_typing()
-        newMessage = await channel.send(message)
+        newMessage = await channel.send(message, file = file)
         
         logger.info("Sent message to {} : {}".format(channel, newMessage))
 
