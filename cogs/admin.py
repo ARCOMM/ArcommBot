@@ -262,7 +262,7 @@ class Admin(commands.Cog):
         """Sync up attendanceTask to on the hour"""
 
         now = datetime.utcnow()
-        now = datetime(now.year, now.month, now.day, 16, 59, 55)
+        #now = datetime(now.year, now.month, now.day, 16, 59, 55)
         future = datetime(now.year, now.month, now.day, now.hour + 1)
 
         await asyncio.sleep((future - now).seconds)
