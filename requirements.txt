@@ -1,0 +1,7 @@
+[python]
+aiohttp
+bs4
+discord
+dotenv
+lxml
+pytz
