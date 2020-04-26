@@ -89,6 +89,15 @@ class Public(commands.Cog):
 
         await self.send_message(ctx.channel, outString)
     
+    @commands.command()
+    async def ping(self, ctx, ip = None):
+        """Check bot response"""
+
+        logger.debug(".ping called")
+
+        if ip == None:
+            await self.send_message(ctx.channel, "Pong!")
+    
     @commands.command(aliases = ['role'])
     async def rank(self, ctx, *args):
         """Join or leave a non-reserved role"""
