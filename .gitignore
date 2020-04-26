@@ -123,6 +123,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
 resources/recruit_post.bak
 resources/last_modified.json
 *.json
+logs/
