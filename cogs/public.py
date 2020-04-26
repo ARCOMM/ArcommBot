@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 
+import aiohttp
 import discord
 from discord.ext import commands
 from pytz import timezone, UnknownTimeZoneError
@@ -13,6 +14,7 @@ logger = logging.getLogger('bot')
 class Public(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.session = aiohttp.ClientSession()
 
     #===Commands===#
 
@@ -175,6 +177,19 @@ class Public(commands.Cog):
             outString += "{}{}-{}{} members\n".format(role.name, nameSpaces, numSpaces, numOfMembers)
 
         await self.send_message(ctx.channel, "```\n{}```".format(outString))
+
+    @commands.command()
+    async def sqf(self, ctx, *args):
+        logger.debug(".sqf called")
+
+        sqfQuery = " ".join(args)
+        wikiUrl = "https://community.bistudio.com/wiki/{}".format(sqfQuery)
+
+        async with self.session.get(wikiUrl) as response:
+            if response.status == 200:
+                await self.send_message(ctx.channel, wikiUrl)
+            else:
+                await self.send_message(ctx.channel, "{} Error - Couldn't get <{}>".format(response.status, wikiUrl))
 
     @commands.command(aliases = ['utc'])
     async def zulu(self, ctx):
