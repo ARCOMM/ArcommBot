@@ -214,13 +214,14 @@ class Public(commands.Cog):
         return elem.name.lower()
     
     def searchRoles(self, roleQuery, roles):
+        logger.debug("searchRoles called")
         roleQuery = roleQuery.lower()
         candidate = None
         for role in roles:
             roleName = role.name.lower()
             if roleName == roleQuery:
                 return role
-            elif re.match(roleQuery, roleName):
+            elif re.match(re.escape(roleQuery), roleName):
                 candidate = role
 
         return candidate
