@@ -65,9 +65,9 @@ class Admin(commands.Cog):
         logger.debug(".shutdown called")
         exit()
 
-    @commands.command(name = "updatecog", hidden = True)
+    @commands.command(name = "update", hidden = True)
     @commands.is_owner()
-    async def _updatecog(self, ctx):
+    async def _update(self, ctx):
         logger.debug(".updatecog called")
         attachments = ctx.message.attachments
 
@@ -407,8 +407,8 @@ class Admin(commands.Cog):
         errorType = type(error)
 
         if errorType == commands.errors.CommandNotFound:
-            logger.debug("Command [{}] not found, use .help for a list".format(ctx.message.content))
-            await self.send_message(ctx.channel, "Command **{}** not found".format(ctx.message.content))
+            logger.debug("Command [{}] not found".format(ctx.message.content))
+            await self.send_message(ctx.channel, "Command **{}** not found, use .help for a list".format(ctx.message.content))
             return
 
         command = ctx.command.name
