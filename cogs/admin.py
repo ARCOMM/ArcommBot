@@ -1,6 +1,5 @@
 import aiohttp
 import asyncio
-from bs4 import BeautifulSoup
 import configparser
 from datetime import datetime, timedelta
 import json
@@ -9,6 +8,7 @@ import os
 import re
 import sys
 
+from bs4 import BeautifulSoup
 from discord import File
 from discord.ext import commands, tasks
 
