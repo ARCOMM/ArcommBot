@@ -10,7 +10,7 @@ from discord.ext import commands
 
 load_dotenv()
 
-bot = commands.Bot(command_prefix = '.')
+bot = commands.Bot(command_prefix = '.', case_insensitive = True)
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 startup_extensions = ["admin", "public"]
