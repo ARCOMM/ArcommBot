@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import re
+import sys
 
 from discord import File
 from discord.ext import commands, tasks
@@ -60,6 +61,34 @@ class Admin(commands.Cog):
         logger.debug(".shutdown called")
         exit()
 
+    @commands.command(name = "updatecog", hidden = True)
+    @commands.is_owner()
+    async def _updatecog(self, ctx):
+        logger.debug(".updatecog called")
+        attachments = ctx.message.attachments
+
+        if attachments != []:
+            logger.debug("Found attachment")
+            newCog = attachments[0]
+            cogs = os.listdir("cogs/")
+
+            if newCog.filename in cogs:
+                logger.debug("Found filename in cogs")
+                tempFilename = "cogs/temp_{}".format(newCog.filename)
+
+                logger.debug("Saving temp file")
+                await newCog.save(tempFilename)
+
+                logger.debug("Replacing cog file")
+                os.replace(tempFilename, "cogs/{}".format(newCog.filename))
+
+                logger.info("{} successfully updated".format(newCog.filename))
+                await self.send_message(ctx.channel, "{} successfully updated".format(newCog.filename))
+            else:
+                logger.debug("Filename not in cogs")
+        else:
+            logger.debug("Found no attachment")
+    
     @commands.command(aliases = ["addrole"])
     @commands.has_role("Staff")
     async def addrank(self, ctx, *args):
@@ -116,7 +145,7 @@ class Admin(commands.Cog):
             -- Output contents of resources/recruit_post.md
             .recruitpost <<with attached file called recruit_post.md>>
             -- Overwrites resources/recruit_post.md, a backup is saved as resources/recruit_post.bak"""
-        #TODO: If message is too long to send (HTTPException), send a file, otherwise send message
+        #TODO: If message is too long to send (HTTPException), send a file, otherwise send a message
         logger.debug('.recruitpost called')
 
         attachments = ctx.message.attachments
@@ -365,9 +394,27 @@ class Admin(commands.Cog):
     async def on_command(self, ctx):
         command = ctx.message.content
         author = ctx.message.author
-        cogName = ctx.args[0].qualified_name
+        cogName = ctx.cog.qualified_name if ctx.cog != None else None
         logger.info("[{}] command [{}] called by [{}]".format(cogName, command, author))
 
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        errorType = type(error)
+        if errorType == commands.errors.CommandNotFound:
+            logger.debug("Command [{}] not found".format(ctx.message.content))
+            await self.send_message(ctx.channel, "Command **{}** not found".format(ctx.message.content))
+        else:
+            logger.warning(error)
+            await self.send_message(ctx.channel, error)
+
+            botLog = File("logs/bot.log", filename = "bot.log")
+            await ctx.channel.send("Bot log", file = File("logs/bot.log", filename = "bot.log"))
+
+    @commands.Cog.listener()
+    async def on_error(self, event):
+        exc = sys.exc_info()
+        logger.warning("Type [{}], Value [{}]\nTraceback[{}]".format(exc[0], exc[1], exc[2]))
+    
     @commands.Cog.listener()
     async def on_ready(self):
         logger.info("===Bot connected/reconnected===")
