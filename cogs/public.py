@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import logging
 from pytz import timezone, UnknownTimeZoneError
 import os
+import re
 
 import discord
 from discord.ext import commands
@@ -99,26 +100,26 @@ class Public(commands.Cog):
         member = ctx.author
         roles = member.guild.roles
 
-        for role in roles:
-            if role.name.lower() == roleQuery.lower():
-                if role.colour.value == 0:
-                    if role in member.roles:
-                        await member.remove_roles(role, reason = "Removed role through .rank command")
-                        logger.info("Removed '{} from '{}' role".format(ctx.author.name, role.name))
-                        await self.send_message(ctx.channel, "{} You've left **{}**".format(member.mention, role.name))
-                        return
-                    else:
-                        await member.add_roles(role, reason = "Added role through .rank command")
-                        logger.info("Added '{} to '{}' role".format(ctx.author.name, role.name))
-                        await self.send_message(ctx.channel, "{} You've joined **{}**".format(member.mention, role.name))
-                        return
+        role = self.searchRoles(roleQuery, roles)
+        if role != None:
+            if role.color.value == 0:
+                if role in member.roles:
+                    await member.remove_roles(role, reason = "Removed role through .rank command")
+                    logger.info("Removed '{} from '{}' role".format(ctx.author.name, role.name))
+                    await self.send_message(ctx.channel, "{} You've left **{}**".format(member.mention, role.name))
+                    return
                 else:
-                    logger.info("Role '{}' is a reserved role".format(role.name))
-                    await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
+                    await member.add_roles(role, reason = "Added role through .rank command")
+                    logger.info("Added '{} to '{}' role".format(ctx.author.name, role.name))
+                    await self.send_message(ctx.channel, "{} You've joined **{}**".format(member.mention, role.name))
+                    return
+            else:
+                logger.info("Role '{}' is a reserved role".format(role.name))
+                await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
                 return
-
-        logger.info("Role '{}' does not exist".format(roleQuery))
-        await self.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
+        else:
+            logger.info("Role '{}' does not exist".format(roleQuery))
+            await self.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
 
     @commands.command(aliases = ['roles'])
     async def ranks(self, ctx):
@@ -212,11 +213,24 @@ class Public(commands.Cog):
     def roleListKey(self, elem):
         return elem.name.lower()
     
+    def searchRoles(self, roleQuery, roles):
+        roleQuery = roleQuery.lower()
+        candidate = None
+        for role in roles:
+            roleName = role.name.lower()
+            if roleName == roleQuery:
+                return role
+            elif re.match(roleQuery, roleName):
+                candidate = role
+
+        return candidate
+    
     #===Listeners===#
 
     @commands.Cog.listener()
     async def on_ready(self):
         print('Bot is online')
+        logger.info("==Bot connected/reconnected==")
 
 
 def setup(bot):
