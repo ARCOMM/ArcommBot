@@ -3,6 +3,7 @@ import logging
 from pytz import timezone, UnknownTimeZoneError
 import os
 import re
+import subprocess
 
 import discord
 from discord.ext import commands
@@ -90,19 +91,21 @@ class Public(commands.Cog):
         await self.send_message(ctx.channel, outString)
     
     @commands.command()
-    async def ping(self, ctx, ip = None):
+    async def ping(self, ctx, host = None):
         """Check bot response"""
-
         logger.debug(".ping called")
 
-        if ip == None:
+        if host == None:
             await self.send_message(ctx.channel, "Pong!")
+        else:
+            await self.send_message(ctx.channel, "Pinging...")
+            p = subprocess.check_output(['ping', host])
+            await self.send_message(ctx.channel, p.decode("utf-8"))
     
     @commands.command(aliases = ['role'])
     async def rank(self, ctx, *args):
         """Join or leave a non-reserved role"""
         # TODO: Fix message if rank is empty
-        # TODO: Autocomplete, possibly ignore blankspace
         logger.debug(".rank called")
 
         roleQuery = " ".join(args)
