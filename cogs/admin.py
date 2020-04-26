@@ -261,7 +261,7 @@ class Admin(commands.Cog):
                 for row in soup.find('table', {'class': 'table'}).find_all('tr'):
                     td = row.find('td')
                     if td:
-                        version = re.search(' ([0-9.]+)(\S+)?', td.text).group(0)
+                        version = re.search(r' ([0-9.]+)(\\S+)?', td.text).group(0)
                         name = re.sub(version, '', td.text)
                         version = version[1:] # Remove whitespace
                         
