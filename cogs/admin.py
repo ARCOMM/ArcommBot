@@ -34,14 +34,18 @@ class Admin(commands.Cog):
     
     @commands.command(name = "logs", hidden = True)
     @commands.is_owner()
-    async def _logs(self, ctx):
-        #TODO: Send entirety of logs folder //client.send(files) seems broken
+    async def _logs(self, ctx, logName):
         logger.debug(".logs called")
 
-        discordLog = File("logs/discord.log", filename = "discord.log")
-        botLog = File("logs/bot.log", filename = "bot.log")
-        await ctx.channel.send("Discord log", file = File("logs/discord.log", filename = "discord.log"))
-        await ctx.channel.send("Bot log", file = File("logs/bot.log", filename = "bot.log"))
+        for fileName in os.listdir("logs/"):
+            if re.match(logName, fileName):
+                logFile = File("logs/{}".format(fileName), filename = fileName)
+                if logFile.filename != "bot.log":
+                    await ctx.channel.send(fileName, file = logFile)
+
+        # For some ungodly reason this only works if bot.log is sent at the end
+        if logName == "bot":
+            await ctx.channel.send("bot.log", file = File("logs/bot.log", filename = "bot.log"))
     
     @commands.command(name = "reload", hidden = True)
     @commands.is_owner()
@@ -400,9 +404,14 @@ class Admin(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         errorType = type(error)
+        command = ctx.command.name
+        
         if errorType == commands.errors.CommandNotFound:
             logger.debug("Command [{}] not found".format(ctx.message.content))
             await self.send_message(ctx.channel, "Command **{}** not found".format(ctx.message.content))
+        elif command == "optime" and errorType == commands.errors.CommandInvokeError:
+            logger.debug("Optime modifier is too large")
+            await self.send_message(ctx.channel, "Optime modifier is too large")
         else:
             logger.warning(error)
             await self.send_message(ctx.channel, error)
