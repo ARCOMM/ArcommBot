@@ -403,13 +403,17 @@ class Admin(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
+        logger.debug("on_command_error called")
         errorType = type(error)
-        command = ctx.command.name
-        
+
         if errorType == commands.errors.CommandNotFound:
-            logger.debug("Command [{}] not found".format(ctx.message.content))
+            logger.debug("Command [{}] not found, use .help for a list".format(ctx.message.content))
             await self.send_message(ctx.channel, "Command **{}** not found".format(ctx.message.content))
-        elif command == "optime" and errorType == commands.errors.CommandInvokeError:
+            return
+
+        command = ctx.command.name
+
+        if command == "optime" and errorType == commands.errors.CommandInvokeError:
             logger.debug("Optime modifier is too large")
             await self.send_message(ctx.channel, "Optime modifier is too large")
         else:
@@ -426,6 +430,7 @@ class Admin(commands.Cog):
     
     @commands.Cog.listener()
     async def on_ready(self):
+        print("===Bot connected/reconnected===")
         logger.info("===Bot connected/reconnected===")
 
 
