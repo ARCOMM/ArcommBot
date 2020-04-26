@@ -2,6 +2,9 @@ import os
 from dotenv import load_dotenv
 import logging
 import logging.handlers
+import sys
+
+#sys.path.append("path-to-dependencies-folder")
 
 from discord.ext import commands
 
