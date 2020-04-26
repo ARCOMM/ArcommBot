@@ -155,7 +155,7 @@ class Public(commands.Cog):
         await channel.trigger_typing()
         newMessage = await channel.send(message)
 
-        logger.info("Sent message to {} : {}".format(channel, newMessage))
+        logger.info("Sent message to {} : {}".format(channel, newMessage.content))
 
         return newMessage
 
@@ -225,13 +225,6 @@ class Public(commands.Cog):
                 candidate = role
 
         return candidate
-    
-    #===Listeners===#
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print('Bot is online')
-        logger.info("==Bot connected/reconnected==")
 
 
 def setup(bot):

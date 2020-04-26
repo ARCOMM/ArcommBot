@@ -28,6 +28,8 @@ class Admin(commands.Cog):
         self.attendanceTask.start()
         self.modcheckTask.start()
         self.recruitTask.start()
+
+    #===Commands===#
     
     @commands.command(name = "logs", hidden = True)
     @commands.is_owner()
@@ -154,7 +156,8 @@ class Admin(commands.Cog):
 
         await channel.trigger_typing()
         newMessage = await channel.send(message)
-        logger.info("Sent message to {} : {}".format(channel, newMessage))
+
+        logger.info("Sent message to {} : {}".format(channel, newMessage.content))
 
         return newMessage
 
@@ -356,6 +359,19 @@ class Admin(commands.Cog):
 
         await asyncio.sleep((future - now).seconds)
         
+    #===Listeners===#
+
+    @commands.Cog.listener()
+    async def on_command(self, ctx):
+        command = ctx.message.content
+        author = ctx.message.author
+        cogName = ctx.args[0].qualified_name
+        logger.info("[{}] command [{}] called by [{}]".format(cogName, command, author))
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        logger.info("===Bot connected/reconnected===")
+
 
 def setup(bot):
     bot.add_cog(Admin(bot))
