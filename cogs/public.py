@@ -16,6 +16,16 @@ class Public(commands.Cog):
 
     #===Commands===#
 
+    @commands.command(aliases = ['daylightsavings'])
+    async def dst(self, ctx):
+        """Check if daylight savings has started (in London)"""
+        logger.debug(".dst called")
+
+        timez = timezone("Europe/London")
+        outString = "DST is in effect" if datetime.now(timez).dst() else "DST is ***not*** in effect"
+
+        await self.send_message(ctx.channel, outString)
+
     @commands.command()
     async def opday(self, ctx):
         """Time left until opday (Saturday optime)"""
@@ -69,30 +79,17 @@ class Public(commands.Cog):
                 return
 
         await self.send_message(ctx.channel, outString)
-       
-    @commands.command(aliases = ['daylightsavings'])
-    async def dst(self, ctx):
-        """Check if DST has started"""
-        logger.debug(".dst called")
-
-        timez = timezone("Europe/London")
-        outString = "DST is in effect" if datetime.now(timez).dst() else "DST is ***not*** in effect"
-
-        await self.send_message(ctx.channel, outString)
-    
-    @commands.command(aliases = ['utc'])
-    async def zulu(self, ctx):
-        '''Return Zulu (UTC) time'''
-        logger.debug(".zulu called")
-
-        now = datetime.utcnow()
-        outString = "It is currently {}:{}:{} Zulu time (UTC)".format(now.hour, now.minute, now.second)
-
-        await self.send_message(ctx.channel, outString)
-    
+            
     @commands.command()
     async def ping(self, ctx, host = None):
-        """Check bot response"""
+        """Check bot response, or ping host/ip address
+
+        Usage:
+            .ping
+            --return Pong!
+            .ping host
+            --ping host ip/address
+        """
         logger.debug(".ping called")
 
         if host == None:
@@ -102,11 +99,17 @@ class Public(commands.Cog):
             p = subprocess.check_output(['ping', host])
             await self.send_message(ctx.channel, p.decode("utf-8"))
     
-    @commands.command(aliases = ['role'])
-    async def rank(self, ctx, *args):
-        """Join or leave a non-reserved role"""
+    @commands.command(aliases = ['rank'])
+    async def role(self, ctx, *args):
+        """Join or leave a role, with autocomplete
+        Usage:
+            .role rolename
+            --Join or leave rolename
+            .role ro
+            --Join or leave rolename
+        """
         # TODO: Fix message if rank is empty
-        logger.debug(".rank called")
+        logger.debug(".role called")
 
         roleQuery = " ".join(args)
         member = ctx.author
@@ -133,10 +136,10 @@ class Public(commands.Cog):
             logger.info("Role '{}' does not exist".format(roleQuery))
             await self.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
 
-    @commands.command(aliases = ['roles'])
-    async def ranks(self, ctx):
-        """Return a list of joinable ranks"""
-        logger.debug(".ranks called")
+    @commands.command(aliases = ['ranks'])
+    async def roles(self, ctx):
+        """Get a list of roles"""
+        logger.debug(".roles called")
 
         member = ctx.author
         roles = member.guild.roles
@@ -158,6 +161,16 @@ class Public(commands.Cog):
             outString += "{}{}-{}{} members\n".format(role.name, nameSpaces, numSpaces, numOfMembers)
 
         await self.send_message(ctx.channel, "```{}```".format(outString))
+
+    @commands.command(aliases = ['utc'])
+    async def zulu(self, ctx):
+        '''Return Zulu (UTC) time'''
+        logger.debug(".zulu called")
+
+        now = datetime.utcnow()
+        outString = "It is currently {}:{}:{} Zulu time (UTC)".format(now.hour, now.minute, now.second)
+
+        await self.send_message(ctx.channel, outString)
     
     #===Utility===#
 
