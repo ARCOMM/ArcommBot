@@ -27,6 +27,20 @@ class Public(commands.Cog):
         await self.send_message(ctx.channel, outString)
 
     @commands.command()
+    async def myroles(self, ctx):
+        """Get a list of roles you're in"""
+        logger.debug(".myroles called")
+
+        roles = ctx.author.roles[1:]
+        outString = ""
+
+        roles.sort(key = self.roleListKey)
+        for role in roles:
+            outString += "{}\n".format(role.name)
+
+        await self.send_message(ctx.channel, "```\n{}```".format(outString))
+
+    @commands.command()
     async def opday(self, ctx):
         """Time left until opday (Saturday optime)"""
         logger.debug(".opday called")
@@ -160,7 +174,7 @@ class Public(commands.Cog):
             numSpaces = " " * (3 - len(numOfMembers))
             outString += "{}{}-{}{} members\n".format(role.name, nameSpaces, numSpaces, numOfMembers)
 
-        await self.send_message(ctx.channel, "```{}```".format(outString))
+        await self.send_message(ctx.channel, "```\n{}```".format(outString))
 
     @commands.command(aliases = ['utc'])
     async def zulu(self, ctx):
