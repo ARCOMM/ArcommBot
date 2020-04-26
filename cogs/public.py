@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 import logging
 from pytz import timezone, UnknownTimeZoneError
 import os
+import re
+import subprocess
 
 import discord
 from discord.ext import commands
@@ -88,37 +90,48 @@ class Public(commands.Cog):
 
         await self.send_message(ctx.channel, outString)
     
+    @commands.command()
+    async def ping(self, ctx, host = None):
+        """Check bot response"""
+        logger.debug(".ping called")
+
+        if host == None:
+            await self.send_message(ctx.channel, "Pong!")
+        else:
+            await self.send_message(ctx.channel, "Pinging...")
+            p = subprocess.check_output(['ping', host])
+            await self.send_message(ctx.channel, p.decode("utf-8"))
+    
     @commands.command(aliases = ['role'])
     async def rank(self, ctx, *args):
         """Join or leave a non-reserved role"""
         # TODO: Fix message if rank is empty
-        # TODO: Autocomplete, possibly ignore blankspace
         logger.debug(".rank called")
 
         roleQuery = " ".join(args)
         member = ctx.author
         roles = member.guild.roles
 
-        for role in roles:
-            if role.name.lower() == roleQuery.lower():
-                if role.colour.value == 0:
-                    if role in member.roles:
-                        await member.remove_roles(role, reason = "Removed role through .rank command")
-                        logger.info("Removed '{} from '{}' role".format(ctx.author.name, role.name))
-                        await self.send_message(ctx.channel, "{} You've left **{}**".format(member.mention, role.name))
-                        return
-                    else:
-                        await member.add_roles(role, reason = "Added role through .rank command")
-                        logger.info("Added '{} to '{}' role".format(ctx.author.name, role.name))
-                        await self.send_message(ctx.channel, "{} You've joined **{}**".format(member.mention, role.name))
-                        return
+        role = self.searchRoles(roleQuery, roles)
+        if role != None:
+            if role.color.value == 0:
+                if role in member.roles:
+                    await member.remove_roles(role, reason = "Removed role through .rank command")
+                    logger.info("Removed '{} from '{}' role".format(ctx.author.name, role.name))
+                    await self.send_message(ctx.channel, "{} You've left **{}**".format(member.mention, role.name))
+                    return
                 else:
-                    logger.info("Role '{}' is a reserved role".format(role.name))
-                    await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
+                    await member.add_roles(role, reason = "Added role through .rank command")
+                    logger.info("Added '{} to '{}' role".format(ctx.author.name, role.name))
+                    await self.send_message(ctx.channel, "{} You've joined **{}**".format(member.mention, role.name))
+                    return
+            else:
+                logger.info("Role '{}' is a reserved role".format(role.name))
+                await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
                 return
-
-        logger.info("Role '{}' does not exist".format(roleQuery))
-        await self.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
+        else:
+            logger.info("Role '{}' does not exist".format(roleQuery))
+            await self.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
 
     @commands.command(aliases = ['roles'])
     async def ranks(self, ctx):
@@ -154,7 +167,7 @@ class Public(commands.Cog):
         await channel.trigger_typing()
         newMessage = await channel.send(message)
 
-        logger.info("Sent message to {} : {}".format(channel, newMessage))
+        logger.info("Sent message to {} : {}".format(channel, newMessage.content))
 
         return newMessage
 
@@ -212,11 +225,18 @@ class Public(commands.Cog):
     def roleListKey(self, elem):
         return elem.name.lower()
     
-    #===Listeners===#
+    def searchRoles(self, roleQuery, roles):
+        logger.debug("searchRoles called")
+        roleQuery = roleQuery.lower()
+        candidate = None
+        for role in roles:
+            roleName = role.name.lower()
+            if roleName == roleQuery:
+                return role
+            elif re.match(re.escape(roleQuery), roleName):
+                candidate = role
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print('Bot is online')
+        return candidate
 
 
 def setup(bot):
