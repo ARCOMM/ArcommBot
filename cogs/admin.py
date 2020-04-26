@@ -65,9 +65,9 @@ class Admin(commands.Cog):
         logger.debug(".shutdown called")
         exit()
 
-    @commands.command(name = "updatecog", hidden = True)
+    @commands.command(name = "update", hidden = True)
     @commands.is_owner()
-    async def _updatecog(self, ctx):
+    async def _update(self, ctx):
         logger.debug(".updatecog called")
         attachments = ctx.message.attachments
 
@@ -261,7 +261,7 @@ class Admin(commands.Cog):
                 for row in soup.find('table', {'class': 'table'}).find_all('tr'):
                     td = row.find('td')
                     if td:
-                        version = re.search(' ([0-9.]+)(\S+)?', td.text).group(0)
+                        version = re.search(r' ([0-9.]+)(\\S+)?', td.text).group(0)
                         name = re.sub(version, '', td.text)
                         version = version[1:] # Remove whitespace
                         
@@ -403,13 +403,17 @@ class Admin(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
+        logger.debug("on_command_error called")
         errorType = type(error)
-        command = ctx.command.name
-        
+
         if errorType == commands.errors.CommandNotFound:
             logger.debug("Command [{}] not found".format(ctx.message.content))
-            await self.send_message(ctx.channel, "Command **{}** not found".format(ctx.message.content))
-        elif command == "optime" and errorType == commands.errors.CommandInvokeError:
+            await self.send_message(ctx.channel, "Command **{}** not found, use .help for a list".format(ctx.message.content))
+            return
+
+        command = ctx.command.name
+
+        if command == "optime" and errorType == commands.errors.CommandInvokeError:
             logger.debug("Optime modifier is too large")
             await self.send_message(ctx.channel, "Optime modifier is too large")
         else:
@@ -426,6 +430,7 @@ class Admin(commands.Cog):
     
     @commands.Cog.listener()
     async def on_ready(self):
+        print("===Bot connected/reconnected===")
         logger.info("===Bot connected/reconnected===")
 
 
