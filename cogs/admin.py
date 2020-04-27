@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+import string
 import sys
 
 import aiohttp
@@ -410,10 +411,12 @@ class Admin(commands.Cog):
         errorType = type(error)
 
         if errorType == commands.errors.CommandNotFound:
-            logger.debug("Command [{}] not found".format(ctx.message.content))
-            await self.send_message(ctx.channel, "Command **{}** not found, use .help for a list".format(ctx.message.content))
-            return
-
+            puncPattern = ".[{}]+".format(re.escape(string.punctuation))
+            if not (re.match(puncPattern, ctx.message.content)):
+                logger.debug("Command [{}] not found".format(ctx.message.content))
+                await self.send_message(ctx.channel, "Command **{}** not found, use .help for a list".format(ctx.message.content))
+                return
+                
         command = ctx.command.name
 
         if command == "optime" and errorType == commands.errors.CommandInvokeError:
