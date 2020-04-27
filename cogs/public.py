@@ -113,7 +113,12 @@ class Public(commands.Cog):
             await self.send_message(ctx.channel, "Pong!")
         else:
             await self.send_message(ctx.channel, "Pinging...")
-            p = subprocess.check_output(['ping', host])
+            try:
+                p = subprocess.check_output(['ping', host])
+            except subprocess.CalledProcessError as e:
+                logger.warning(e)
+                await self.send_message(ctx.channel, "Ping failed: {}".format(e.returncode))
+                return
             await self.send_message(ctx.channel, "```{}```".format(p.decode("utf-8")))
     
     @commands.command(aliases = ['rank'])
