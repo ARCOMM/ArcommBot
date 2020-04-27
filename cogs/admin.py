@@ -202,9 +202,12 @@ class Admin(commands.Cog):
 
         await self.send_message(channel, outString)
             
-    async def recruitmentPost(self, channel):
+    async def recruitmentPost(self, channel, pingAdmins = False):
         logger.debug("recruitmentPost called")
-        introString = "Post recruitment on <https://www.reddit.com/r/FindAUnit>"
+        if pingAdmins:
+            introString = "<@&{}> Post recruitment on <https://www.reddit.com/r/FindAUnit>"
+        else:
+            introString = "Post recruitment on <https://www.reddit.com/r/FindAUnit>"
         
         await channel.send(introString, file = File("resources/recruit_post.md", filename = "recruit_post.md"))
     
@@ -370,7 +373,7 @@ class Admin(commands.Cog):
         if now.weekday() in targetDays:
             logger.debug("Called within targetDays")
             channel = self.bot.get_channel(STAFF_CHANNEL)
-            await self.recruitmentPost(channel)
+            await self.recruitmentPost(channel, pingAdmins = True)
 
     @recruitTask.before_loop
     async def before_recruitTask(self):
