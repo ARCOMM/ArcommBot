@@ -93,9 +93,9 @@ class Admin(commands.Cog):
         else:
             logger.debug("Found no attachment")
     
-    @commands.command(aliases = ["addrole"])
+    @commands.command(aliases = ["addrank", "newrank", "newrole", "createrank", "createrole"])
     @commands.has_role("Staff")
-    async def addrank(self, ctx, *args):
+    async def addrole(self, ctx, *args):
         '''Create a new role'''
         logger.debug(".addrank called")
 
@@ -109,13 +109,13 @@ class Admin(commands.Cog):
                 await self.send_message(ctx.channel, "{} Role **{}** already exists".format(member.mention, role.name))
                 return
 
-        await member.guild.create_role(name = roleQuery, reason = "Created role through .addrank")
+        await member.guild.create_role(name = roleQuery, reason = "Created role through .addrank", mentionable = True)
         logger.info("Created '{}' role".format(roleQuery))
         await self.send_message(ctx.channel, "{} Created role **{}**".format(member.mention, roleQuery))
 
-    @commands.command(aliases = ["removerole"])
+    @commands.command(aliases = ["removerank", "delrank", "delrole", "deleterank", "deleterole"])
     @commands.has_role("Staff")
-    async def removerank(self, ctx, *args):
+    async def removerole(self, ctx, *args):
         '''Remove an existing role'''
         logger.debug('.removerank called')
 
