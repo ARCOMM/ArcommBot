@@ -87,7 +87,7 @@ class Public(commands.Cog):
         if timez != None:
             try:
                 timez = timezone(timez)
-                localTime = datetime.now().replace(hour = 18 + modifier)
+                localTime = datetime.now(tz = timezone('Europe/London')).replace(hour = 18 + modifier)
                 localTime = localTime.astimezone(timez)
                 outString += "\n({}:00:00 {})".format(localTime.hour, timez.zone)
             except UnknownTimeZoneError as e:
