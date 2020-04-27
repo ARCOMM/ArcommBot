@@ -5,6 +5,7 @@ import re
 import subprocess
 
 import aiohttp
+from bs4 import BeautifulSoup
 import discord
 from discord.ext import commands
 from pytz import timezone, UnknownTimeZoneError
@@ -187,7 +188,11 @@ class Public(commands.Cog):
 
         async with self.session.get(wikiUrl) as response:
             if response.status == 200:
-                await self.send_message(ctx.channel, wikiUrl)
+                soup = BeautifulSoup(await response.text(), features = "lxml")
+                desc = soup.find('dt', string = 'Description:')
+                if desc != None:
+                    descText = desc.parent.find('dd')
+                    await self.send_message(ctx.channel, "<{}>\n```\n{}\n{}```".format(wikiUrl, desc.text, descText.contents[0]))
             else:
                 await self.send_message(ctx.channel, "{} Error - Couldn't get <{}>".format(response.status, wikiUrl))
 
