@@ -114,7 +114,7 @@ class Public(commands.Cog):
         else:
             await self.send_message(ctx.channel, "Pinging...")
             p = subprocess.check_output(['ping', host])
-            await self.send_message(ctx.channel, p.decode("utf-8"))
+            await self.send_message(ctx.channel, "```{}```".format(p.decode("utf-8")))
     
     @commands.command(aliases = ['rank'])
     async def role(self, ctx, *args):
@@ -179,23 +179,46 @@ class Public(commands.Cog):
 
         await self.send_message(ctx.channel, "```\n{}```".format(outString))
 
-    @commands.command()
+    @commands.command(aliases = ['wiki'])
     async def sqf(self, ctx, *args):
+        """Find a bistudio wiki page
+
+        Usage:
+            .sqf BIS_fnc_helicopterDamage
+            .sqf BIS fnc helicopterDamage
+            --https://community.bistudio.com/wiki/BIS_fnc_helicopterDamage
+        """
         logger.debug(".sqf called")
 
-        sqfQuery = " ".join(args)
+        sqfQuery = "_".join(args)
         wikiUrl = "https://community.bistudio.com/wiki/{}".format(sqfQuery)
 
         async with self.session.get(wikiUrl) as response:
             if response.status == 200:
                 soup = BeautifulSoup(await response.text(), features = "lxml")
+
+                warnings = soup.find_all("div", {"style": "background-color: #EA0; color: #FFF; display: flex; align-items: center; margin: 0.5em 0"})
+                for warning in warnings:
+                    warning.decompose()
+
                 desc = soup.find('dt', string = 'Description:')
-                if desc != None:
-                    descText = desc.parent.find('dd')
-                    await self.send_message(ctx.channel, "<{}>\n```\n{}\n{}```".format(wikiUrl, desc.text, descText.contents[0]))
+                syntax = soup.find('dt', string = "Syntax:")
+                ret = soup.find('dt', string = "Return Value:")
+
+                elems = [desc, syntax, ret]
+                outString = ""
+                for elem in elems:
+                    if elem != None:
+                        elemContent = elem.findNext('dd').text
+                        outString += "# {}\n{}\n\n".format(elem.text, elemContent.lstrip().rstrip())
+                        
+                if outString != "":
+                    await self.send_message(ctx.channel, "<{}>\n```md\n{}```".format(wikiUrl, outString))
+                else:
+                    await self.send_message(ctx.channel, "<{}>".format(wikiUrl))
             else:
                 await self.send_message(ctx.channel, "{} Error - Couldn't get <{}>".format(response.status, wikiUrl))
-
+                
     @commands.command(aliases = ['utc'])
     async def zulu(self, ctx):
         '''Return Zulu (UTC) time'''
