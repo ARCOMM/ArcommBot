@@ -7,6 +7,7 @@ import os
 import re
 import string
 import sys
+import traceback
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -229,6 +230,9 @@ class Admin(commands.Cog):
         with open('resources/last_modified.json', 'r') as f:
             lastModified = json.load(f)
 
+        updatePost = ""
+        repoChanged = False
+
         for mod in config['github']:
             url = "{}/{}/releases/latest".format(repoUrl, config['github'][mod])
             if mod in lastModified['github']:
@@ -240,9 +244,12 @@ class Admin(commands.Cog):
             async with self.session.get(url, headers = headers) as response:
                 if response.status == 200: #Repo has been updated
                     logger.info("Response 200 Success: {}".format(mod))
+                    repoChanged = True
+
                     lastModified['github'][mod] = response.headers['Last-Modified']
                     response = await response.json()
-                    await self.updatePost(mod, response['tag_name'], "<{}>".format(response['html_url']))
+
+                    updatePost += "**{}** has released a new version ({})\n<{}>\n".format(mod, response['tag_name'], response['html_url'])
                 elif response.status == 304: #Repo hasn't been updated
                     logger.info("Response 304 - Not Changed: {}".format(mod))
                 else:
@@ -250,13 +257,19 @@ class Admin(commands.Cog):
                 
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
+
+        return repoChanged, updatePost
     
     async def handleCup(self):
         logger.debug("handleCup called")
+
         lastModified = {}
 
         with open('resources/last_modified.json', 'r') as f:
             lastModified = json.load(f)
+
+        updatePost = ""
+        repoChanged = False
 
         async with self.session.get('http://cup-arma3.org/download') as response:
             if response.status == 200:
@@ -273,8 +286,10 @@ class Admin(commands.Cog):
                             if version != lastModified['cup'][name]:
                                 logger.info("Mod '{}' has been updated".format(name))
 
+                                repoChanged = True
                                 lastModified['cup'][name] = version
-                                await self.updatePost("CUP - {}".format(name), version, '<http://cup-arma3.org/download>')
+
+                                updatePost += "**{}** has released a new version ({})\n{}\n".format("CUP - {}".format(name), version, '<http://cup-arma3.org/download>')
                             else:
                                 logger.info("Mod '{}' has not been updated".format(name))
                         else:
@@ -285,6 +300,8 @@ class Admin(commands.Cog):
         
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
+
+        return repoChanged, updatePost
     
     async def handleSteam(self):
         logger.debug("handleSteam called")
@@ -301,6 +318,9 @@ class Admin(commands.Cog):
             data["publishedfileids[{}]".format(str(i))] = config['steam'][modId]
             i += 1    
 
+        updatePost = ""
+        repoChanged = False
+
         async with self.session.post(steamUrl, data = data) as response:
             if response.status == 200:
                 logger.info("Response 200 - Success")
@@ -315,8 +335,10 @@ class Admin(commands.Cog):
                         if timeUpdated != lastModified['steam'][modName]:
                             logger.info("Mod '{}' has been updated".format(modName))
 
+                            repoChanged = True
                             lastModified['steam'][modName] = timeUpdated
-                            await self.updatePost(modName, "", '<https://steamcommunity.com/sharedfiles/filedetails/changelog/{}>'.format(mod['publishedfileid']))
+
+                            updatePost += "**{}** has released a new version ({})\n{}\n".format(modName, "", '<https://steamcommunity.com/sharedfiles/filedetails/changelog/{}>'.format(mod['publishedfileid']))
                         else:
                             logger.info("Mod '{}' has not been updated".format(modName))
                     else:
@@ -326,6 +348,8 @@ class Admin(commands.Cog):
             
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
+
+        return repoChanged, updatePost
     
     #===Tasks===#
 
@@ -355,14 +379,18 @@ class Admin(commands.Cog):
     
     @tasks.loop(hours = 1)
     async def modcheckTask(self):
-        #TODO: Ping once for each website, not for each post
         logger.debug("modcheckTask called")
+        
         try:
-            await self.handleGithub()
-            await self.handleCup()
-            await self.handleSteam()
+            githubChanged, githubPost = await self.handleGithub()
+            cupChanged, cupPost = await self.handleCup()
+            steamChanged, steamPost = await self.handleSteam()
+
+            if githubChanged or cupChanged or steamChanged:
+                channel = self.bot.get_channel(STAFF_CHANNEL)
+                await self.send_message(channel, "<@&{}>\n{}{}{}".format(ADMIN_ROLE, githubPost, cupPost, steamPost))
         except Exception as e:
-            logger.error(e)
+            logger.error(traceback.format_exc())
     
     @tasks.loop(hours = 24)
     async def recruitTask(self):
