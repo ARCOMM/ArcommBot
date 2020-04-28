@@ -213,14 +213,6 @@ class Admin(commands.Cog):
         
         await channel.send(introString, file = File("resources/recruit_post.md", filename = "recruit_post.md"))
     
-    async def updatePost(self, name, version, url):
-        logger.debug("updatePost called")
-
-        channel = self.bot.get_channel(STAFF_CHANNEL)
-        outString = "<@&{}> **{}** has released a new version ({})\n{}".format(ADMIN_ROLE, name, version, url)
-
-        await self.send_message(channel, outString)
-    
     async def handleGithub(self):
         logger.debug("handleGithub called")
 
@@ -380,7 +372,7 @@ class Admin(commands.Cog):
     @tasks.loop(hours = 1)
     async def modcheckTask(self):
         logger.debug("modcheckTask called")
-        
+
         try:
             githubChanged, githubPost = await self.handleGithub()
             cupChanged, cupPost = await self.handleCup()
