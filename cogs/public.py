@@ -12,6 +12,21 @@ from pytz import timezone, UnknownTimeZoneError
 
 logger = logging.getLogger('bot')
 
+EXTRA_TIMEZONES = {
+    "PT" : "America/Los_Angeles",
+    "PST": "ETC/GMT+8",
+    "PDT": "ETC/GMT+7",
+    "MT" : "America/Denver",
+    "MST": "ETC/GMT+7",
+    "MDT": "ETC/GMT+6",
+    "CT" : "America/Chicago",
+    "CST": "ETC/GMT+6",
+    "CDT": "ETC/GMT+5",
+    "ET" : "America/New_York",
+    "EST": "ETC/GMT+5",
+    "EDT": "ETC/GMT+4"
+}
+
 class Public(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -86,7 +101,10 @@ class Public(commands.Cog):
       
         if timez != None:
             try:
-                timez = timezone(timez)
+                if timez.upper() in EXTRA_TIMEZONES:
+                    timez = timezone(EXTRA_TIMEZONES[timez.upper()])
+                else:
+                    timez = timezone(timez)
                 localTime = datetime.now(tz = timezone('Europe/London')).replace(hour = 18 + modifier)
                 localTime = localTime.astimezone(timez)
                 outString += "\n({}:00:00 {})".format(localTime.hour, timez.zone)
