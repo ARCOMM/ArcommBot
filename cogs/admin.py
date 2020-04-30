@@ -207,7 +207,7 @@ class Admin(commands.Cog):
     async def recruitmentPost(self, channel, pingAdmins = False):
         logger.debug("recruitmentPost called")
         if pingAdmins:
-            introString = "<@&{}> Post recruitment on <https://www.reddit.com/r/FindAUnit>"
+            introString = "<@&{}> Post recruitment on <https://www.reddit.com/r/FindAUnit>".format(ADMIN_ROLE)
         else:
             introString = "Post recruitment on <https://www.reddit.com/r/FindAUnit>"
         
@@ -395,6 +395,7 @@ class Admin(commands.Cog):
             logger.debug("Called within targetDays")
             channel = self.bot.get_channel(STAFF_CHANNEL)
             await self.recruitmentPost(channel, pingAdmins = True)
+            await self.send_message(channel, self.recruitTask.next_iteration)
 
     @recruitTask.before_loop
     async def before_recruitTask(self):
