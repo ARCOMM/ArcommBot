@@ -22,6 +22,7 @@ config.read('resources/config.ini')
 ADMIN_CHANNEL = int(config['discord']['admin_channel'])
 ADMIN_ROLE = int(config['discord']['admin_role'])
 STAFF_CHANNEL = int(config['discord']['staff_channel'])
+TEST_CHANNEL = int(config['discord']['test_channel'])
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 
 class Admin(commands.Cog):
@@ -331,6 +332,7 @@ class Admin(commands.Cog):
                             lastModified['steam'][modName] = timeUpdated
 
                             updatePost += "**{}** has released a new version ({})\n{}\n".format(modName, "", '<https://steamcommunity.com/sharedfiles/filedetails/changelog/{}>'.format(mod['publishedfileid']))
+                            updatePost += "```\n{}```\n".format(await self.getSteamChangelog(mod['publishedfileid']))
                         else:
                             logger.info("Mod '{}' has not been updated".format(modName))
                     else:
@@ -342,6 +344,19 @@ class Admin(commands.Cog):
             json.dump(lastModified, f)
 
         return repoChanged, updatePost
+    
+    async def getSteamChangelog(self, modId):
+        steamUrl = "https://steamcommunity.com/sharedfiles/filedetails/changelog/{}".format(modId)
+
+        async with self.session.get(steamUrl) as response:
+            if response.status == 200:
+                soup = BeautifulSoup(await response.text(), features = "lxml")
+                headline = soup.find("div", {"class" : "changelog headline"})
+                return headline.findNext("p").get_text(separator = "\n")
+            else:
+                print("steam GET error: {} {} - {}".format(response.status, response.reason, await response.text()))
+
+        return ""
     
     #===Tasks===#
 
