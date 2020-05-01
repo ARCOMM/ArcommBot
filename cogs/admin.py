@@ -25,6 +25,13 @@ STAFF_CHANNEL = int(config['discord']['staff_channel'])
 TEST_CHANNEL = int(config['discord']['test_channel'])
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 
+DEV_IDS = [173123135321800704, 166337116106653696] # Sven, border
+
+def is_dev():
+    async def predicate(ctx):
+        return ctx.author.id in DEV_IDS
+    return commands.check(predicate)
+
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -36,7 +43,7 @@ class Admin(commands.Cog):
     #===Commands===#
     
     @commands.command(name = "logs", hidden = True)
-    @commands.is_owner()
+    @is_dev()
     async def _logs(self, ctx, logName):
         logger.debug(".logs called")
 
@@ -51,7 +58,7 @@ class Admin(commands.Cog):
             await ctx.channel.send("bot.log", file = File("logs/bot.log", filename = "bot.log"))
     
     @commands.command(name = "reload", hidden = True)
-    @commands.is_owner()
+    @is_dev()
     async def _reload(self, ctx, ext: str):
         logger.debug(".reload called")
         try:
@@ -69,7 +76,7 @@ class Admin(commands.Cog):
         exit()
 
     @commands.command(name = "update", hidden = True)
-    @commands.is_owner()
+    @is_dev()
     async def _update(self, ctx):
         logger.debug(".updatecog called")
         attachments = ctx.message.attachments
