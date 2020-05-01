@@ -417,7 +417,6 @@ class Admin(commands.Cog):
             logger.debug("Called within targetDays")
             channel = self.bot.get_channel(STAFF_CHANNEL)
             await self.recruitmentPost(channel, pingAdmins = True)
-            await self.send_message(channel, self.recruitTask.next_iteration)
 
     @recruitTask.before_loop
     async def before_recruitTask(self):
@@ -429,7 +428,7 @@ class Admin(commands.Cog):
         
         now = datetime.utcnow()
         #now = datetime(now.year, now.month, now.day, 16, 59, 55)
-        future = datetime(now.year, now.month, now.day, targetHour, targetMinute)
+        future = datetime(now.year, now.month, now.day, targetHour, targetMinute, 0, 0)
 
         if now.hour >= targetHour and now.minute > targetMinute:
             logger.debug("Missed timeslot, adding a day")
