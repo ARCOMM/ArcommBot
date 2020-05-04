@@ -36,6 +36,8 @@ class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.session = aiohttp.ClientSession()
+        self.recruitDebounce = False
+        self.attendanceDebounce = False
         self.attendanceTask.start()
         self.modcheckTask.start()
         self.recruitTask.start()
@@ -251,7 +253,8 @@ class Admin(commands.Cog):
 
                     updatePost += "**{}** has released a new version ({})\n<{}>\n".format(mod, response['tag_name'], response['html_url'])
                 elif response.status == 304: #Repo hasn't been updated
-                    logger.info("Response 304 - Not Changed: {}".format(mod))
+                    None
+                    #logger.info("Response 304 - Not Changed: {}".format(mod))
                 else:
                     logged.warning("{} GET error: {} {} - {}".format(mod, response.status, response.reason, await response.text()))
                 
@@ -291,7 +294,8 @@ class Admin(commands.Cog):
 
                                 updatePost += "**{}** has released a new version ({})\n{}\n".format("CUP - {}".format(name), version, '<http://cup-arma3.org/download>')
                             else:
-                                logger.info("Mod '{}' has not been updated".format(name))
+                                None
+                                #logger.info("Mod '{}' has not been updated".format(name))
                         else:
                             logger.debug("Mod '{}' not in lastModified".format(name))
                             lastModified['cup'][name] = version
@@ -341,7 +345,8 @@ class Admin(commands.Cog):
                             updatePost += "**{}** has released a new version ({})\n{}\n".format(modName, "", '<https://steamcommunity.com/sharedfiles/filedetails/changelog/{}>'.format(mod['publishedfileid']))
                             updatePost += "```\n{}```\n".format(await self.getSteamChangelog(mod['publishedfileid']))
                         else:
-                            logger.info("Mod '{}' has not been updated".format(modName))
+                            None
+                            #logger.info("Mod '{}' has not been updated".format(modName))
                     else:
                         lastModified['steam'][modName] = timeUpdated
             else:
@@ -370,14 +375,19 @@ class Admin(commands.Cog):
     @tasks.loop(hours = 1)
     async def attendanceTask(self):
         logger.debug("attendanceTask called")
-        targetTimeslot = [17, 20] #5pm -> 8pm
+        if not self.attendanceDebounce:
+            self.attendanceDebounce = True
+            targetTimeslot = [17, 20] #5pm -> 8pm
 
-        now = datetime.utcnow()
-        #now = datetime(2020, 4, 25, 17)
-        if now.weekday() == 5: #Saturday
-            if now.hour >= targetTimeslot[0] and now.hour <= targetTimeslot[1]:
-                logger.debug("Called within timeslot")
-                await self.attendancePost()
+            now = datetime.utcnow()
+            #now = datetime(2020, 4, 25, 17)
+            if now.weekday() == 5: #Saturday
+                if now.hour >= targetTimeslot[0] and now.hour <= targetTimeslot[1]:
+                    logger.debug("Called within timeslot")
+                    await self.attendancePost()
+            self.attendanceDebounce = False
+        else:
+            logger.debug("Hit attendanceDebounce")
 
     @attendanceTask.before_loop
     async def before_attendanceTask(self):
@@ -409,14 +419,18 @@ class Admin(commands.Cog):
     @tasks.loop(hours = 24)
     async def recruitTask(self):
         logger.debug("recruitTask called")
-        targetDays = [0, 2, 4] #Monday, Wednesday, Friday
-
-        now = datetime.utcnow()
-        #now = datetime(2020, 4, 22) #A Wednesday
-        if now.weekday() in targetDays:
-            logger.debug("Called within targetDays")
-            channel = self.bot.get_channel(STAFF_CHANNEL)
-            await self.recruitmentPost(channel, pingAdmins = True)
+        if not self.recruitDebounce:
+            self.recruitDebounce = True
+            targetDays = [0, 2, 4] #Monday, Wednesday, Friday
+            now = datetime.utcnow()
+            #now = datetime(2020, 4, 22) #A Wednesday
+            if now.weekday() in targetDays:
+                logger.debug("Called within targetDays")
+                channel = self.bot.get_channel(STAFF_CHANNEL)
+                await self.recruitmentPost(channel, pingAdmins = True)
+            self.recruitDebounce = False
+        else:
+            logger.debug("Hit recruitDebounce")
 
     @recruitTask.before_loop
     async def before_recruitTask(self):
