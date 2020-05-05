@@ -48,6 +48,7 @@ class Admin(commands.Cog):
         except Exception as e:
             logger.critical("Failed to reload {} extension".format(ext))
             logger.critical(e)
+            await self.send_message(ctx.channel, e)
 
     @commands.command(name = "shutdown", hidden = True)
     @commands.is_owner()
@@ -129,6 +130,28 @@ class Admin(commands.Cog):
         logger.info("Role '{}' doesn't exist".format(role.name))
         await self.send_message(ctx.channel, "{} Role **{}** doesn't exist".format(member.mention, roleQuery))
 
+    @commands.command(aliases = ["renamerank", "rename"])
+    @commands.has_role("Staff")
+    async def renamerole(self, ctx, oldName, newName):
+        '''Rename an existing role
+            
+           Usage: 
+                rename "old name" "new name"
+        '''
+        member = ctx.author
+        roles = member.guild.roles
+        role = self.searchRoles(oldName, roles)
+
+        if role != None:
+            if role.color.value == 0:
+                oldRoleName = str(role.name)
+                await role.edit(name = newName)
+                await self.send_message(ctx.channel, "{} Renamed **{}** to **{}**".format(member.mention, oldRoleName, role.name))
+            else:
+                await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
+        else:
+            await self.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
+    
     @commands.command()
     @commands.has_role("Staff")
     async def recruitpost(self, ctx):
@@ -191,6 +214,16 @@ class Admin(commands.Cog):
             introString = "Post recruitment on <https://www.reddit.com/r/FindAUnit>"
         
         await channel.send(introString, file = File("resources/recruit_post.md", filename = "recruit_post.md"))
+    
+    def searchRoles(self, roleQuery, roles):
+        logger.debug("searchRoles called")
+        roleQuery = roleQuery.lower()
+
+        for role in roles:
+            roleName = role.name.lower()
+            if roleName == roleQuery:
+                return role
+        return None
     
     #===Listeners===#
 
