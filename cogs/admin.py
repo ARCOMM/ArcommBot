@@ -93,17 +93,13 @@ class Admin(commands.Cog):
 
         roleQuery = " ".join(args)
         member = ctx.author
-        roles = member.guild.roles
+        role = self.utility.searchRoles(ctx, roleQuery, reserved = True)
 
-        for role in roles[1:]:
-            if role.name.lower() == roleQuery.lower():
-                logger.info("Role '{}' already exists".format(role.name))
-                await self.utility.send_message(ctx.channel, "{} Role **{}** already exists".format(member.mention, role.name))
-                return
-
-        await member.guild.create_role(name = roleQuery, reason = "Created role through .addrank", mentionable = True)
-        logger.info("Created '{}' role".format(roleQuery))
-        await self.utility.send_message(ctx.channel, "{} Created role **{}**".format(member.mention, roleQuery))
+        if role:
+            await self.utility.send_message(ctx.channel, "{} Role **{}** already exists".format(member.mention, roleQuery))
+        else:
+            await member.guild.create_role(name = roleQuery, reason = "Created role through .addrole", mentionable = True)
+            await self.utility.send_message(ctx.channel, "{} Created role **{}**".format(member.mention, roleQuery))
 
     @commands.command(aliases = ["removerank", "delrank", "delrole", "deleterank", "deleterole"])
     @commands.has_role("Staff")
@@ -113,23 +109,18 @@ class Admin(commands.Cog):
 
         roleQuery = " ".join(args)
         member = ctx.author
-        roles = member.guild.roles
+        role = self.utility.searchRoles(ctx, roleQuery, reserved = True)
 
-        for role in roles[1:]:
-            if role.name.lower() == roleQuery.lower():
-                logger.debug("Role '{}' found".format(roleQuery))
-                if not (role.colour.value == 0):
-                    logger.info("Role '{}' is a reserve role".format(role.name))
-                    await self.utility.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
-                    return
-
-                await role.delete(reason = "Removed role through .removerank")
-                logger.info("Removed '{}' role".format(role.name))
+        if role:
+            if role != "RESERVED":
+                await role.delete(reason = "Removed role through .removerole")
                 await self.utility.send_message(ctx.channel, "{} Removed role **{}**".format(member.mention, role.name))
                 return
-
-        logger.info("Role '{}' doesn't exist".format(role.name))
-        await self.utility.send_message(ctx.channel, "{} Role **{}** doesn't exist".format(member.mention, roleQuery))
+            else:
+                await self.utility.send_message(ctx.channel, "{} Role **{}** is reserved".format(member.mention, roleQuery))
+                return
+        else:
+            await self.utility.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
 
     @commands.command(aliases = ["renamerank", "rename"])
     @commands.has_role("Staff")
@@ -140,18 +131,17 @@ class Admin(commands.Cog):
                 rename "old name" "new name"
         '''
         member = ctx.author
-        roles = member.guild.roles
-        role = self.searchRoles(oldName, roles)
+        role = self.utility.searchRoles(ctx, oldName, reserved = True)
 
         if role != None:
-            if role.color.value == 0:
+            if role != "RESERVED":
                 oldRoleName = str(role.name)
                 await role.edit(name = newName)
                 await self.utility.send_message(ctx.channel, "{} Renamed **{}** to **{}**".format(member.mention, oldRoleName, role.name))
             else:
-                await self.utility.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
+                await self.utility.send_message(ctx.channel, "{} Role **{}** is reserved".format(member.mention, oldName))
         else:
-            await self.utility.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
+            await self.utility.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, oldName))
     
     @commands.command()
     @commands.has_role("Staff")
@@ -205,17 +195,7 @@ class Admin(commands.Cog):
             introString = "Post recruitment on <https://www.reddit.com/r/FindAUnit>"
         
         await channel.send(introString, file = File("resources/recruit_post.md", filename = "recruit_post.md"))
-    
-    def searchRoles(self, roleQuery, roles):
-        logger.debug("searchRoles called")
-        roleQuery = roleQuery.lower()
-
-        for role in roles:
-            roleName = role.name.lower()
-            if roleName == roleQuery:
-                return role
-        return None
-    
+      
     #===Listeners===#
 
     @commands.Cog.listener()
