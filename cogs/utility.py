@@ -1,4 +1,5 @@
 import logging
+import re
 
 from discord.ext import commands
 
@@ -18,10 +19,13 @@ class Utility(commands.Cog):
 
         return newMessage
 
-    def getRoles(self, ctx, reserved = False, sort = False):
+    def getRoles(self, ctx, reserved = False, sort = False, personal = False):
         logger.debug("getRoles called")
         
-        roles = ctx.message.author.guild.roles[1:]
+        if not personal:
+            roles = ctx.message.author.guild.roles[1:]
+        else:
+            roles = ctx.message.author.roles[1:]
 
         if sort:
             roles.sort(key = self.roleListKey)
