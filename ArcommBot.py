@@ -13,18 +13,18 @@ load_dotenv()
 bot = commands.Bot(command_prefix = '.', case_insensitive = True)
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-startup_extensions = ["admin", "public", "comp"]
+startup_extensions = ["admin", "public", "comp", "tasking"]
 
 def setupLogging():
     logger = logging.getLogger('discord')
     logger.setLevel(logging.DEBUG)
-    handler = logging.handlers.TimedRotatingFileHandler(filename = 'logs/discord.log', when = 'h', interval = 4, backupCount = 6, encoding = 'utf-8')
+    handler = logging.handlers.TimedRotatingFileHandler(filename = 'logs/discord.log', when = 'h', interval = 6, backupCount = 4, encoding = 'utf-8')
     handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
     logger.addHandler(handler)
 
     logger = logging.getLogger('bot')
     logger.setLevel(logging.DEBUG)
-    handler = logging.handlers.TimedRotatingFileHandler(filename = 'logs/bot.log', when = 'h', interval = 4, backupCount = 6, encoding = 'utf-8')
+    handler = logging.handlers.TimedRotatingFileHandler(filename = 'logs/bot.log', when = 'h', interval = 6, backupCount = 4, encoding = 'utf-8')
     handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
     logger.addHandler(handler)
 
