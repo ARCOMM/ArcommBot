@@ -50,10 +50,9 @@ class Public(commands.Cog):
         """Get a list of roles you're in"""
         logger.debug(".myroles called")
 
-        roles = ctx.author.roles[1:]
+        roles = self.utility.getRoles(ctx, reserved = True, sort = True, personal = True)
         outString = ""
 
-        roles.sort(key = self.roleListKey)
         for role in roles:
             outString += "{}\n".format(role.name)
 
@@ -146,55 +145,45 @@ class Public(commands.Cog):
         Usage:
             .role rolename
             --Join or leave rolename
+
             .role ro
             --Join or leave rolename
         """
-        # TODO: Fix message if rank is empty
         logger.debug(".role called")
 
         roleQuery = " ".join(args)
         member = ctx.author
-        roles = member.guild.roles
+        role = self.utility.searchRoles(ctx, roleQuery, autocomplete = True, reserved = True)
 
-        role = self.searchRoles(roleQuery, roles)
-        if role != None:
-            if role.color.value == 0:
+        if role:
+            if role != "RESERVED":
                 if role in member.roles:
-                    await member.remove_roles(role, reason = "Removed role through .rank command")
-                    logger.info("Removed '{} from '{}' role".format(ctx.author.name, role.name))
+                    await member.remove_roles(role, reason = "Remove role through .role command")
                     await self.utility.send_message(ctx.channel, "{} You've left **{}**".format(member.mention, role.name))
-                    return
                 else:
-                    await member.add_roles(role, reason = "Added role through .rank command")
-                    logger.info("Added '{} to '{}' role".format(ctx.author.name, role.name))
+                    await member.add_roles(role, reason = "Added role through .role command")
                     await self.utility.send_message(ctx.channel, "{} You've joined **{}**".format(member.mention, role.name))
-                    return
             else:
-                logger.info("Role '{}' is a reserved role".format(role.name))
-                await self.utility.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
-                return
+                await self.utility.send_message(ctx.channel, "{} Role **{}** is reserved".format(member.mention, roleQuery))
         else:
-            logger.info("Role '{}' does not exist".format(roleQuery))
             await self.utility.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
 
     @commands.command(aliases = ['ranks'])
     async def roles(self, ctx):
-        """Get a list of roles"""
+        """Get a list of joinable roles"""
         logger.debug(".roles called")
 
         member = ctx.author
-        roles = member.guild.roles
+        roles = self.utility.getRoles(ctx, reserved = False, sort = True)
         outString = ""
         longestName = 0
         roleList = []
 
-        for role in roles[1:]:
-            if role.colour.value == 0:
-                roleList.append(role)
-                if len(role.name) > longestName:
-                    longestName = len(role.name)
+        for role in roles:
+            roleList.append(role)
+            if len(role.name) > longestName:
+                longestName = len(role.name)
 
-        roleList.sort(key = self.roleListKey)
         for role in roleList:
             numOfMembers = str(len(role.members))
             nameSpaces = " " * (longestName + 1 - len(role.name))
@@ -305,23 +294,7 @@ class Public(commands.Cog):
                 opday = opday.replace(day = today.day + 1)
 
         return opday - today
-
-    def roleListKey(self, elem):
-        return elem.name.lower()
-    
-    def searchRoles(self, roleQuery, roles):
-        logger.debug("searchRoles called")
-        roleQuery = roleQuery.lower()
-        candidate = None
-        for role in roles:
-            roleName = role.name.lower()
-            if roleName == roleQuery:
-                return role
-            elif re.match(re.escape(roleQuery), roleName):
-                candidate = role
-
-        return candidate
-
+  
 
 def setup(bot):
     bot.add_cog(Public(bot))

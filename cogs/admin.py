@@ -133,7 +133,7 @@ class Admin(commands.Cog):
         member = ctx.author
         role = self.utility.searchRoles(ctx, oldName, reserved = True)
 
-        if role != None:
+        if role:
             if role != "RESERVED":
                 oldRoleName = str(role.name)
                 await role.edit(name = newName)
