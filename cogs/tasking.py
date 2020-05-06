@@ -194,7 +194,7 @@ class Tasking(commands.Cog):
                 for row in soup.find('table', {'class': 'table'}).find_all('tr'):
                     td = row.find('td')
                     if td:
-                        version = re.search(r' ([0-9.]+)(\\S+)?', td.text).group(0)
+                        version = re.search(r' ([0-9.]+)(\S+)?', td.text).group(0)
                         name = re.sub(version, '', td.text)
                         version = version[1:] # Remove whitespace
                         
@@ -282,6 +282,16 @@ class Tasking(commands.Cog):
                 print("steam GET error: {} {} - {}".format(response.status, response.reason, await response.text()))
 
         return ""
+
+    async def send_message(self, channel, message: str):
+        """Send a message to the text channel"""
+
+        await channel.trigger_typing()
+        newMessage = await channel.send(message)
+
+        logger.info("Sent message to {} : {}".format(channel, newMessage.content))
+
+        return newMessage
 
 def setup(bot):
     bot.add_cog(Tasking(bot))
