@@ -46,6 +46,29 @@ class Public(commands.Cog):
         await self.utility.send_message(ctx.channel, outString)
 
     @commands.command()
+    async def members(self, ctx, *args):
+        '''Get a list of members in a role
+            
+            Usage:
+                .members rolename
+        '''
+        logger.debug(".members called")
+
+        roleQuery = " ".join(args)
+        author = ctx.author
+        role = self.utility.searchRoles(ctx, roleQuery, reserved = True, censorReserved = False)
+        
+        if role:
+            outString = ""
+            members = role.members
+            members.sort(key = self.utility.roleListKey)
+            for member in members:
+                outString += "{}\n".format(member.name)
+            await self.utility.send_message(ctx.channel, "```md\n# {}\n{}```".format(role.name, outString))
+        else:
+            await self.utility.send_message(ctx.channel, "{} Role **{}** does not exist".format(author.mention, roleQuery))
+    
+    @commands.command()
     async def myroles(self, ctx):
         """Get a list of roles you're in"""
         logger.debug(".myroles called")
@@ -294,7 +317,7 @@ class Public(commands.Cog):
                 opday = opday.replace(day = today.day + 1)
 
         return opday - today
-  
+
 
 def setup(bot):
     bot.add_cog(Public(bot))
