@@ -39,7 +39,7 @@ class Utility(commands.Cog):
         else:
             return roles
     
-    def searchRoles(self, ctx, roleQuery, autocomplete = False, reserved = False):
+    def searchRoles(self, ctx, roleQuery, autocomplete = False, reserved = False, censorReserved = True):
         logger.debug("searchRoles called")
 
         roles = self.getRoles(ctx, reserved = reserved)
@@ -58,7 +58,10 @@ class Utility(commands.Cog):
             if candidate.colour.value == 0:
                 return candidate
             else:
-                return "RESERVED"
+                if censorReserved:
+                    return "RESERVED"
+                else:
+                    return candidate
         else:
             return None
 
