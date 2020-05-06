@@ -19,6 +19,7 @@ def is_dev():
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.utility = bot.get_cog("Utility")
 
     #===Commands===#
     
@@ -44,11 +45,11 @@ class Admin(commands.Cog):
         try:
             self.bot.reload_extension("cogs." + ext)
             logger.info("=========Reloaded {} extension=========".format(ext))
-            await self.send_message(ctx.channel, "Reloaded {} extension".format(ext))
+            await self.utility.send_message(ctx.channel, "Reloaded {} extension".format(ext))
         except Exception as e:
             logger.critical("Failed to reload {} extension".format(ext))
             logger.critical(e)
-            await self.send_message(ctx.channel, e)
+            await self.utility.send_message(ctx.channel, e)
 
     @commands.command(name = "shutdown", hidden = True)
     @commands.is_owner()
@@ -78,7 +79,7 @@ class Admin(commands.Cog):
                 os.replace(tempFilename, "cogs/{}".format(newCog.filename))
 
                 logger.info("{} successfully updated".format(newCog.filename))
-                await self.send_message(ctx.channel, "{} successfully updated".format(newCog.filename))
+                await self.utility.send_message(ctx.channel, "{} successfully updated".format(newCog.filename))
             else:
                 logger.debug("Filename not in cogs")
         else:
@@ -97,12 +98,12 @@ class Admin(commands.Cog):
         for role in roles[1:]:
             if role.name.lower() == roleQuery.lower():
                 logger.info("Role '{}' already exists".format(role.name))
-                await self.send_message(ctx.channel, "{} Role **{}** already exists".format(member.mention, role.name))
+                await self.utility.send_message(ctx.channel, "{} Role **{}** already exists".format(member.mention, role.name))
                 return
 
         await member.guild.create_role(name = roleQuery, reason = "Created role through .addrank", mentionable = True)
         logger.info("Created '{}' role".format(roleQuery))
-        await self.send_message(ctx.channel, "{} Created role **{}**".format(member.mention, roleQuery))
+        await self.utility.send_message(ctx.channel, "{} Created role **{}**".format(member.mention, roleQuery))
 
     @commands.command(aliases = ["removerank", "delrank", "delrole", "deleterank", "deleterole"])
     @commands.has_role("Staff")
@@ -119,16 +120,16 @@ class Admin(commands.Cog):
                 logger.debug("Role '{}' found".format(roleQuery))
                 if not (role.colour.value == 0):
                     logger.info("Role '{}' is a reserve role".format(role.name))
-                    await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
+                    await self.utility.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
                     return
 
                 await role.delete(reason = "Removed role through .removerank")
                 logger.info("Removed '{}' role".format(role.name))
-                await self.send_message(ctx.channel, "{} Removed role **{}**".format(member.mention, role.name))
+                await self.utility.send_message(ctx.channel, "{} Removed role **{}**".format(member.mention, role.name))
                 return
 
         logger.info("Role '{}' doesn't exist".format(role.name))
-        await self.send_message(ctx.channel, "{} Role **{}** doesn't exist".format(member.mention, roleQuery))
+        await self.utility.send_message(ctx.channel, "{} Role **{}** doesn't exist".format(member.mention, roleQuery))
 
     @commands.command(aliases = ["renamerank", "rename"])
     @commands.has_role("Staff")
@@ -146,11 +147,11 @@ class Admin(commands.Cog):
             if role.color.value == 0:
                 oldRoleName = str(role.name)
                 await role.edit(name = newName)
-                await self.send_message(ctx.channel, "{} Renamed **{}** to **{}**".format(member.mention, oldRoleName, role.name))
+                await self.utility.send_message(ctx.channel, "{} Renamed **{}** to **{}**".format(member.mention, oldRoleName, role.name))
             else:
-                await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
+                await self.utility.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
         else:
-            await self.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
+            await self.utility.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
     
     @commands.command()
     @commands.has_role("Staff")
@@ -187,24 +188,14 @@ class Admin(commands.Cog):
 
                 await newRecruitPost.save("resources/recruit_post.md")
                 logger.info("Saved new recruit_post.md")
-                await self.send_message(ctx.channel, "{} {}".format(ctx.author.mention, "Recruitment post has been updated"))
+                await self.utility.send_message(ctx.channel, "{} {}".format(ctx.author.mention, "Recruitment post has been updated"))
                 return
             else:
                 logger.debug("Attachment '{}' has incorrect name".format(newRecruitPost.filename))
-                await self.send_message(ctx.channel, "{} {}".format(ctx.author.mention, "File must be called recruit_post.md"))
+                await self.utility.send_message(ctx.channel, "{} {}".format(ctx.author.mention, "File must be called recruit_post.md"))
                 return
 
     #===Utility===#
-
-    async def send_message(self, channel, message: str):
-        """Send a message to the text channel"""
-
-        await channel.trigger_typing()
-        newMessage = await channel.send(message)
-
-        logger.info("Sent message to {} : {}".format(channel, newMessage.content))
-
-        return newMessage
         
     async def recruitmentPost(self, channel, pingAdmins = False):
         logger.debug("recruitmentPost called")
@@ -243,18 +234,18 @@ class Admin(commands.Cog):
             puncPattern = ".[{}]+".format(re.escape(string.punctuation))
             if not (re.match(puncPattern, ctx.message.content)):
                 logger.debug("Command [{}] not found".format(ctx.message.content))
-                await self.send_message(ctx.channel, "Command **{}** not found, use .help for a list".format(ctx.message.content))
+                await self.utility.send_message(ctx.channel, "Command **{}** not found, use .help for a list".format(ctx.message.content))
                 return
         
-        if not command: return
+        if not ctx.command: return
         command = ctx.command.name
 
         if command == "optime" and errorType == commands.errors.CommandInvokeError:
             logger.debug("Optime modifier is too large")
-            await self.send_message(ctx.channel, "Optime modifier is too large")
+            await self.utility.send_message(ctx.channel, "Optime modifier is too large")
         else:
             logger.warning(error)
-            await self.send_message(ctx.channel, error)
+            await self.utility.send_message(ctx.channel, error)
 
             botLog = File("logs/bot.log", filename = "bot.log")
             await ctx.channel.send("Bot log", file = File("logs/bot.log", filename = "bot.log"))

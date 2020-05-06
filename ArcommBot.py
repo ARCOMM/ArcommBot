@@ -10,7 +10,7 @@ load_dotenv()
 bot = commands.Bot(command_prefix = '.', case_insensitive = True)
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-startup_extensions = ["admin", "public", "comp", "tasking"]
+startup_extensions = ["utility", "admin", "public", "comp", "tasking"]
 
 def setupLogging():
     logger = logging.getLogger('discord')
