@@ -26,9 +26,12 @@ GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 class Tasking(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.utility = bot.get_cog("Utility")
         self.session = aiohttp.ClientSession()
+
         self.recruitDebounce = False
         self.attendanceDebounce = False
+
         self.attendanceTask.start()
         self.modcheckTask.start()
         self.recruitTask.start()
@@ -76,7 +79,7 @@ class Tasking(commands.Cog):
 
             if githubChanged or cupChanged or steamChanged:
                 channel = self.bot.get_channel(STAFF_CHANNEL)
-                await self.send_message(channel, "<@&{}>\n{}{}{}".format(ADMIN_ROLE, githubPost, cupPost, steamPost))
+                await self.utility.send_message(channel, "<@&{}>\n{}{}{}".format(ADMIN_ROLE, githubPost, cupPost, steamPost))
         except Exception as e:
             logger.error(traceback.format_exc())
     
@@ -125,7 +128,7 @@ class Tasking(commands.Cog):
         channel = self.bot.get_channel(ADMIN_CHANNEL)
         outString = "<@&{}> Collect attendance!".format(ADMIN_ROLE)
 
-        await self.send_message(channel, outString)
+        await self.utility.send_message(channel, outString)
             
     async def recruitmentPost(self, channel, pingAdmins = False):
         logger.debug("recruitmentPost called")
@@ -283,15 +286,6 @@ class Tasking(commands.Cog):
 
         return ""
 
-    async def send_message(self, channel, message: str):
-        """Send a message to the text channel"""
-
-        await channel.trigger_typing()
-        newMessage = await channel.send(message)
-
-        logger.info("Sent message to {} : {}".format(channel, newMessage.content))
-
-        return newMessage
 
 def setup(bot):
     bot.add_cog(Tasking(bot))

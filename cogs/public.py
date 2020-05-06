@@ -30,6 +30,7 @@ EXTRA_TIMEZONES = {
 class Public(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.utility = bot.get_cog("Utility")
         self.session = aiohttp.ClientSession()
 
     #===Commands===#
@@ -42,21 +43,20 @@ class Public(commands.Cog):
         timez = timezone("Europe/London")
         outString = "DST is in effect" if datetime.now(timez).dst() else "DST is ***not*** in effect"
 
-        await self.send_message(ctx.channel, outString)
+        await self.utility.send_message(ctx.channel, outString)
 
     @commands.command()
     async def myroles(self, ctx):
         """Get a list of roles you're in"""
         logger.debug(".myroles called")
 
-        roles = ctx.author.roles[1:]
+        roles = self.utility.getRoles(ctx, reserved = True, sort = True, personal = True)
         outString = ""
 
-        roles.sort(key = self.roleListKey)
         for role in roles:
             outString += "{}\n".format(role.name)
 
-        await self.send_message(ctx.channel, "```\n{}```".format(outString))
+        await self.utility.send_message(ctx.channel, "```\n{}```".format(outString))
 
     @commands.command()
     async def opday(self, ctx):
@@ -67,7 +67,7 @@ class Public(commands.Cog):
         dt = self.formatDt(dt)        
         outString = "There {} until opday!".format(dt)
         
-        await self.send_message(ctx.channel, outString)
+        await self.utility.send_message(ctx.channel, outString)
 
     @commands.command()
     async def optime(self, ctx, modifier = '0', timez = None):
@@ -110,10 +110,10 @@ class Public(commands.Cog):
                 outString += "\n({}:00:00 {})".format(localTime.hour, timez.zone)
             except UnknownTimeZoneError as e:
                 logger.debug("Invalid timezone: {}".format(timezone))
-                await self.send_message(ctx.channel, "Invalid timezone")
+                await self.utility.send_message(ctx.channel, "Invalid timezone")
                 return
 
-        await self.send_message(ctx.channel, outString)
+        await self.utility.send_message(ctx.channel, outString)
             
     @commands.command()
     async def ping(self, ctx, host = None):
@@ -128,16 +128,16 @@ class Public(commands.Cog):
         logger.debug(".ping called")
 
         if host == None:
-            await self.send_message(ctx.channel, "Pong!")
+            await self.utility.send_message(ctx.channel, "Pong!")
         else:
-            await self.send_message(ctx.channel, "Pinging...")
+            await self.utility.send_message(ctx.channel, "Pinging...")
             try:
                 p = subprocess.check_output(['ping', host])
             except subprocess.CalledProcessError as e:
                 logger.warning(e)
-                await self.send_message(ctx.channel, "Ping failed: {}".format(e.returncode))
+                await self.utility.send_message(ctx.channel, "Ping failed: {}".format(e.returncode))
                 return
-            await self.send_message(ctx.channel, "```{}```".format(p.decode("utf-8")))
+            await self.utility.send_message(ctx.channel, "```{}```".format(p.decode("utf-8")))
     
     @commands.command(aliases = ['rank'])
     async def role(self, ctx, *args):
@@ -145,62 +145,52 @@ class Public(commands.Cog):
         Usage:
             .role rolename
             --Join or leave rolename
+
             .role ro
             --Join or leave rolename
         """
-        # TODO: Fix message if rank is empty
         logger.debug(".role called")
 
         roleQuery = " ".join(args)
         member = ctx.author
-        roles = member.guild.roles
+        role = self.utility.searchRoles(ctx, roleQuery, autocomplete = True, reserved = True)
 
-        role = self.searchRoles(roleQuery, roles)
-        if role != None:
-            if role.color.value == 0:
+        if role:
+            if role != "RESERVED":
                 if role in member.roles:
-                    await member.remove_roles(role, reason = "Removed role through .rank command")
-                    logger.info("Removed '{} from '{}' role".format(ctx.author.name, role.name))
-                    await self.send_message(ctx.channel, "{} You've left **{}**".format(member.mention, role.name))
-                    return
+                    await member.remove_roles(role, reason = "Remove role through .role command")
+                    await self.utility.send_message(ctx.channel, "{} You've left **{}**".format(member.mention, role.name))
                 else:
-                    await member.add_roles(role, reason = "Added role through .rank command")
-                    logger.info("Added '{} to '{}' role".format(ctx.author.name, role.name))
-                    await self.send_message(ctx.channel, "{} You've joined **{}**".format(member.mention, role.name))
-                    return
+                    await member.add_roles(role, reason = "Added role through .role command")
+                    await self.utility.send_message(ctx.channel, "{} You've joined **{}**".format(member.mention, role.name))
             else:
-                logger.info("Role '{}' is a reserved role".format(role.name))
-                await self.send_message(ctx.channel, "{} **{}** is a reserved role".format(member.mention, role.name))
-                return
+                await self.utility.send_message(ctx.channel, "{} Role **{}** is reserved".format(member.mention, roleQuery))
         else:
-            logger.info("Role '{}' does not exist".format(roleQuery))
-            await self.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
+            await self.utility.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
 
     @commands.command(aliases = ['ranks'])
     async def roles(self, ctx):
-        """Get a list of roles"""
+        """Get a list of joinable roles"""
         logger.debug(".roles called")
 
         member = ctx.author
-        roles = member.guild.roles
+        roles = self.utility.getRoles(ctx, reserved = False, sort = True)
         outString = ""
         longestName = 0
         roleList = []
 
-        for role in roles[1:]:
-            if role.colour.value == 0:
-                roleList.append(role)
-                if len(role.name) > longestName:
-                    longestName = len(role.name)
+        for role in roles:
+            roleList.append(role)
+            if len(role.name) > longestName:
+                longestName = len(role.name)
 
-        roleList.sort(key = self.roleListKey)
         for role in roleList:
             numOfMembers = str(len(role.members))
             nameSpaces = " " * (longestName + 1 - len(role.name))
             numSpaces = " " * (3 - len(numOfMembers))
             outString += "{}{}-{}{} members\n".format(role.name, nameSpaces, numSpaces, numOfMembers)
 
-        await self.send_message(ctx.channel, "```\n{}```".format(outString))
+        await self.utility.send_message(ctx.channel, "```\n{}```".format(outString))
 
     @commands.command(aliases = ['wiki'])
     async def sqf(self, ctx, *args):
@@ -236,11 +226,11 @@ class Public(commands.Cog):
                         outString += "# {}\n{}\n\n".format(elem.text, elemContent.lstrip().rstrip())
                         
                 if outString != "":
-                    await self.send_message(ctx.channel, "<{}>\n```md\n{}```".format(wikiUrl, outString))
+                    await self.utility.send_message(ctx.channel, "<{}>\n```md\n{}```".format(wikiUrl, outString))
                 else:
-                    await self.send_message(ctx.channel, "<{}>".format(wikiUrl))
+                    await self.utility.send_message(ctx.channel, "<{}>".format(wikiUrl))
             else:
-                await self.send_message(ctx.channel, "{} Error - Couldn't get <{}>".format(response.status, wikiUrl))
+                await self.utility.send_message(ctx.channel, "{} Error - Couldn't get <{}>".format(response.status, wikiUrl))
                 
     @commands.command(aliases = ['utc'])
     async def zulu(self, ctx):
@@ -250,19 +240,9 @@ class Public(commands.Cog):
         now = datetime.utcnow()
         outString = "It is currently {}:{}:{} Zulu time (UTC)".format(now.hour, now.minute, now.second)
 
-        await self.send_message(ctx.channel, outString)
+        await self.utility.send_message(ctx.channel, outString)
     
     #===Utility===#
-
-    async def send_message(self, channel, message: str):
-        """Send a message to the text channel"""
-
-        await channel.trigger_typing()
-        newMessage = await channel.send(message)
-
-        logger.info("Sent message to {} : {}".format(channel, newMessage.content))
-
-        return newMessage
 
     def formatDt(self, dt):
         # TODO: s not removed on +1/-1 messages as time unit's aren't modified
@@ -314,23 +294,7 @@ class Public(commands.Cog):
                 opday = opday.replace(day = today.day + 1)
 
         return opday - today
-
-    def roleListKey(self, elem):
-        return elem.name.lower()
-    
-    def searchRoles(self, roleQuery, roles):
-        logger.debug("searchRoles called")
-        roleQuery = roleQuery.lower()
-        candidate = None
-        for role in roles:
-            roleName = role.name.lower()
-            if roleName == roleQuery:
-                return role
-            elif re.match(re.escape(roleQuery), roleName):
-                candidate = role
-
-        return candidate
-
+  
 
 def setup(bot):
     bot.add_cog(Public(bot))
