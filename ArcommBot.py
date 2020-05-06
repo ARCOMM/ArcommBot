@@ -2,9 +2,6 @@ import os
 from dotenv import load_dotenv
 import logging
 import logging.handlers
-import sys
-
-#sys.path.append("path-to-dependencies-folder")
 
 from discord.ext import commands
 
@@ -47,4 +44,4 @@ if __name__ == "__main__":
         bot.loop.run_until_complete(bot.start(TOKEN))
         
         print("Reconnecting")
-        bot.client = commands.Bot(command_prefix = '.', loop = bot.loop)
+        bot.client = commands.Bot(command_prefix = '.', case_insensitive = True, loop = bot.loop)
