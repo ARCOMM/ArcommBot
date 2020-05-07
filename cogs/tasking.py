@@ -166,8 +166,9 @@ class Tasking(commands.Cog):
 
                     lastModified['github'][mod] = response.headers['Last-Modified']
                     response = await response.json()
-
-                    updatePost += "**{}** has released a new version ({})\n<{}>\n".format(mod, response['tag_name'], response['html_url'])
+                    
+                    changelogUrl = "<https://github.com/{}/releases/tag/{}>".format(mod, response['tag_name'])
+                    updatePost += "**{}** has released a new version ({})\n<{}>\n".format(mod, response['tag_name'], changelogUrl)
                 elif response.status == 304: #Repo hasn't been updated
                     None
                     #logger.info("Response 304 - Not Changed: {}".format(mod))
@@ -208,7 +209,9 @@ class Tasking(commands.Cog):
                                 repoChanged = True
                                 lastModified['cup'][name] = version
 
-                                updatePost += "**{}** has released a new version ({})\n{}\n".format("CUP - {}".format(name), version, '<http://cup-arma3.org/download>')
+                                urlName = name.replace(" ", "_")
+                                changelogUrl = "<http://cup-arma3.org/downloads/CUP_{}-{}-changelog.txt>".format(urlName, version)
+                                updatePost += "**{}** has released a new version ({})\n{}\n".format("CUP - {}".format(name), version, changelogUrl)
                             else:
                                 None
                                 #logger.info("Mod '{}' has not been updated".format(name))
