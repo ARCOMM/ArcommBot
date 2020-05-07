@@ -16,7 +16,7 @@ def is_dev():
         return ctx.author.id in DEV_IDS
     return commands.check(predicate)
 
-class Admin(commands.Cog):
+class Staff(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.utility = bot.get_cog("Utility")
@@ -239,4 +239,4 @@ class Admin(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Admin(bot))
+    bot.add_cog(Staff(bot))
