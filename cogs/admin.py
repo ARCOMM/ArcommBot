@@ -187,13 +187,10 @@ class Admin(commands.Cog):
 
     #===Utility===#
         
-    async def recruitmentPost(self, channel, pingAdmins = False):
+    async def recruitmentPost(self, channel):
         logger.debug("recruitmentPost called")
-        if pingAdmins:
-            introString = "<@&{}> Post recruitment on <https://www.reddit.com/r/FindAUnit>".format(ADMIN_ROLE)
-        else:
-            introString = "Post recruitment on <https://www.reddit.com/r/FindAUnit>"
-        
+
+        introString = "Post recruitment on <https://www.reddit.com/r/FindAUnit>"  
         await channel.send(introString, file = File("resources/recruit_post.md", filename = "recruit_post.md"))
       
     #===Listeners===#
