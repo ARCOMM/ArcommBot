@@ -1,3 +1,4 @@
+import configparser
 import logging
 import re
 
@@ -5,9 +6,17 @@ from discord.ext import commands
 
 logger = logging.getLogger('bot')
 
+config = configparser.ConfigParser()
+config.read('resources/config.ini')
+
 class Utility(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        
+        self.ADMIN_CHANNEL = bot.get_channel(int(config['discord']['admin_channel']))
+        self.STAFF_CHANNEL = bot.get_channel(int(config['discord']['staff_channel']))
+        self.TEST_CHANNEL = bot.get_channel(int(config['discord']['test_channel']))
+        self.ADMIN_ROLE_ID = int(config['discord']['admin_role']) 
 
     async def send_message(self, channel, message: str):
         """Send a message to the text channel"""

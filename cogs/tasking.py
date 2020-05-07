@@ -17,10 +17,6 @@ logger = logging.getLogger('bot')
 config = configparser.ConfigParser()
 config.read('resources/config.ini')
 
-ADMIN_CHANNEL = int(config['discord']['admin_channel'])
-ADMIN_ROLE = int(config['discord']['admin_role'])
-STAFF_CHANNEL = int(config['discord']['staff_channel'])
-TEST_CHANNEL = int(config['discord']['test_channel'])
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 
 class Tasking(commands.Cog):
@@ -78,8 +74,9 @@ class Tasking(commands.Cog):
             steamChanged, steamPost = await self.handleSteam()
 
             if githubChanged or cupChanged or steamChanged:
-                channel = self.bot.get_channel(STAFF_CHANNEL)
-                await self.utility.send_message(channel, "<@&{}>\n{}{}{}".format(ADMIN_ROLE, githubPost, cupPost, steamPost))
+                channel = self.utility.STAFF_CHANNEL
+                role = self.utility.ADMIN_ROLE_ID
+                await self.utility.send_message(channel, "<@&{}>\n{}{}{}".format(role, githubPost, cupPost, steamPost))
         except Exception as e:
             logger.error(traceback.format_exc())
     
@@ -93,7 +90,7 @@ class Tasking(commands.Cog):
             #now = datetime(2020, 4, 22) #A Wednesday
             if now.weekday() in targetDays:
                 logger.debug("Called within targetDays")
-                channel = self.bot.get_channel(STAFF_CHANNEL)
+                channel = self.utility.STAFF_CHANNEL
                 await self.recruitmentPost(channel, pingAdmins = True)
             self.recruitDebounce = False
         else:
@@ -125,15 +122,17 @@ class Tasking(commands.Cog):
     async def attendancePost(self):
         logger.debug("attendancePost called")
 
-        channel = self.bot.get_channel(ADMIN_CHANNEL)
-        outString = "<@&{}> Collect attendance!".format(ADMIN_ROLE)
+        channel = self.utility.ADMIN_CHANNEL
+        role = self.utility.ADMIN_ROLE_ID
+        outString = "<@&{}> Collect attendance!".format(role)
 
         await self.utility.send_message(channel, outString)
             
     async def recruitmentPost(self, channel, pingAdmins = False):
         logger.debug("recruitmentPost called")
         if pingAdmins:
-            introString = "<@&{}> Post recruitment on <https://www.reddit.com/r/FindAUnit>".format(ADMIN_ROLE)
+            role = self.utility.ADMIN_ROLE_ID
+            introString = "<@&{}> Post recruitment on <https://www.reddit.com/r/FindAUnit>".format(role)
         else:
             introString = "Post recruitment on <https://www.reddit.com/r/FindAUnit>"
         
@@ -166,8 +165,9 @@ class Tasking(commands.Cog):
 
                     lastModified['github'][mod] = response.headers['Last-Modified']
                     response = await response.json()
-
-                    updatePost += "**{}** has released a new version ({})\n<{}>\n".format(mod, response['tag_name'], response['html_url'])
+                    
+                    changelogUrl = "https://github.com/{}/releases/tag/{}".format(mod, response['tag_name'])
+                    updatePost += "**{}** has released a new version ({})\n<{}>\n".format(mod, response['tag_name'], changelogUrl)
                 elif response.status == 304: #Repo hasn't been updated
                     None
                     #logger.info("Response 304 - Not Changed: {}".format(mod))
@@ -208,7 +208,9 @@ class Tasking(commands.Cog):
                                 repoChanged = True
                                 lastModified['cup'][name] = version
 
-                                updatePost += "**{}** has released a new version ({})\n{}\n".format("CUP - {}".format(name), version, '<http://cup-arma3.org/download>')
+                                urlName = name.replace(" ", "_")
+                                changelogUrl = "<http://cup-arma3.org/downloads/CUP_{}-{}-changelog.txt>".format(urlName, version)
+                                updatePost += "**{}** has released a new version ({})\n{}\n".format("CUP - {}".format(name), version, changelogUrl)
                             else:
                                 None
                                 #logger.info("Mod '{}' has not been updated".format(name))
