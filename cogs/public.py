@@ -67,7 +67,7 @@ class Public(commands.Cog):
         else:
             await self.utility.send_message(ctx.channel, "{} Role **{}** does not exist".format(author.mention, roleQuery))
     
-    @commands.command()
+    @commands.command(aliases = ['myranks'])
     async def myroles(self, ctx):
         """Get a list of roles you're in"""
         logger.debug(".myroles called")
@@ -80,8 +80,8 @@ class Public(commands.Cog):
 
         await self.utility.send_message(ctx.channel, "```\n{}```".format(outString))
 
-    @commands.command()
-    async def opday(self, ctx):
+    @commands.command(aliases = ['opday'])
+    async def opstart(self, ctx):
         """Time left until opday (Saturday optime)"""
         logger.debug(".opday called")
 
