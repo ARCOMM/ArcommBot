@@ -30,7 +30,6 @@ EXTRA_TIMEZONES = {
 class Public(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.utility = bot.get_cog("Utility")
         self.session = aiohttp.ClientSession()
 
     #===Commands===#
@@ -318,6 +317,11 @@ class Public(commands.Cog):
 
         return opday - today
 
+    #===Listeners===#
+    
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.utility = self.bot.get_cog("Utility")
 
 def setup(bot):
     bot.add_cog(Public(bot))

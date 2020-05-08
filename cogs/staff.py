@@ -9,7 +9,6 @@ logger = logging.getLogger('bot')
 class Staff(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.utility = bot.get_cog("Utility")
 
     #===Commands===#
     
@@ -121,6 +120,11 @@ class Staff(commands.Cog):
         introString = "Post recruitment on <https://www.reddit.com/r/FindAUnit>"  
         await channel.send(introString, file = File("resources/recruit_post.md", filename = "recruit_post.md"))
       
+    #===Listeners===#
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.utility = self.bot.get_cog("Utility")
 
 def setup(bot):
     bot.add_cog(Staff(bot))
