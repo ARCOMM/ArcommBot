@@ -87,19 +87,14 @@ class Tasking(commands.Cog):
     @tasks.loop(hours = 1)
     async def attendanceTask(self):
         logger.debug("attendanceTask called")
-        if not self.attendanceDebounce:
-            self.attendanceDebounce = True
-            targetTimeslot = [17, 20] #5pm -> 8pm
+        targetTimeslot = [17, 20] #5pm -> 8pm
 
-            now = datetime.utcnow()
-            #now = datetime(2020, 4, 25, 17)
-            if now.weekday() == 5: #Saturday
-                if now.hour >= targetTimeslot[0] and now.hour <= targetTimeslot[1]:
-                    logger.debug("Called within timeslot")
-                    await self.attendancePost()
-            self.attendanceDebounce = False
-        else:
-            logger.debug("Hit attendanceDebounce")
+        now = datetime.utcnow()
+        #now = datetime(2020, 4, 25, 17)
+        if now.weekday() == 5: #Saturday
+            if now.hour >= targetTimeslot[0] and now.hour <= targetTimeslot[1]:
+                logger.debug("Called within timeslot")
+                await self.attendancePost()
 
     @attendanceTask.before_loop
     async def before_attendanceTask(self):
@@ -124,22 +119,23 @@ class Tasking(commands.Cog):
                 if not ('datetime' in lastDatetime):
                     lastDatetime['datetime'] = "now"
                 else:   #Make sure the lastDatetime isn't in the past, otherwise will be announcing old events
-                    now = datetime.now(tz = timezone("Europe/London"))
-                    offset = str(now.utcoffset()).replace(":", "")[:-2]
+                    if lastDatetime['datetime'] != "now":
+                        now = datetime.now(tz = timezone("Europe/London"))
+                        offset = str(now.utcoffset()).replace(":", "")[:-2]
 
-                    eventStartTime = lastDatetime['datetime'].replace("Z", "+0{}".format(str(offset)))
-                    eventStartTime = datetime.strptime(eventStartTime, "%Y-%m-%dT%H:%M:%S%z")
+                        eventStartTime = lastDatetime['datetime'].replace("Z", "+0{}".format(str(offset)))
+                        eventStartTime = datetime.strptime(eventStartTime, "%Y-%m-%dT%H:%M:%S%z")
 
-                    if eventStartTime < now:
-                        lastDatetime['datetime'] = "now"
+                        if eventStartTime < now:
+                            lastDatetime['datetime'] = "now"
 
             self.calendar.storeCalendar(lastDatetime['datetime'])
             newAnnouncement = True
 
             while newAnnouncement:
                 newAnnouncement = False
-
                 event = self.calendar.pop()
+
                 if event:
                     now = datetime.now(tz = timezone("Europe/London"))
                     offset = str(now.utcoffset()).replace(":", "")[:-2]
@@ -181,18 +177,14 @@ class Tasking(commands.Cog):
     @tasks.loop(hours = 24)
     async def recruitTask(self):
         logger.debug("recruitTask called")
-        if not self.recruitDebounce:
-            self.recruitDebounce = True
-            targetDays = [0, 2, 4] #Monday, Wednesday, Friday
-            now = datetime.utcnow()
-            #now = datetime(2020, 4, 22) #A Wednesday
-            if now.weekday() in targetDays:
-                logger.debug("Called within targetDays")
-                channel = self.utility.STAFF_CHANNEL
-                await self.recruitmentPost(channel, pingAdmins = True)
-            self.recruitDebounce = False
-        else:
-            logger.debug("Hit recruitDebounce")
+
+        targetDays = [0, 2, 4] #Monday, Wednesday, Friday
+        now = datetime.utcnow()
+        #now = datetime(2020, 4, 22) #A Wednesday
+        if now.weekday() in targetDays:
+            logger.debug("Called within targetDays")
+            channel = self.utility.STAFF_CHANNEL
+            await self.recruitmentPost(channel, pingAdmins = True)
 
     @recruitTask.before_loop
     async def before_recruitTask(self):
@@ -226,7 +218,7 @@ class Tasking(commands.Cog):
 
         timeUntilStr = str(timeUntil).split(".")[0] #Remove microseconds
 
-        if summary.lower() == "arcomm recruit orientation":
+        if re.search("recruit", summary.lower()) != None:
             ping = "<@&{}>".format(self.utility.RECRUIT_ROLE)
         elif re.search("training", summary.lower()) != None:
             ping = "<@&{}>".format(self.utility.TRAINING_ROLE)
@@ -240,7 +232,7 @@ class Tasking(commands.Cog):
         await asyncio.sleep((timeUntil - timedelta(minutes = 5)).seconds)
 
         outString = "{}\n```md\n# {}\n\nStarting in 5 minutes```".format(ping, summary)
-        await self.utility.send_message(self.utility.TEST_CHANNEL, outString)
+        await self.utility.send_message(self.utility.OP_NEWS_CHANNEL, outString)
 
     async def attendancePost(self):
         logger.debug("attendancePost called")
@@ -295,7 +287,7 @@ class Tasking(commands.Cog):
                     None
                     #logger.info("Response 304 - Not Changed: {}".format(mod))
                 else:
-                    logged.warning("{} GET error: {} {} - {}".format(mod, response.status, response.reason, await response.text()))
+                    logger.warning("{} GET error: {} {} - {}".format(mod, response.status, response.reason, await response.text()))
                 
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
@@ -416,9 +408,6 @@ class Tasking(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         self.utility = self.bot.get_cog("Utility")
-
-        self.recruitDebounce = False
-        self.attendanceDebounce = False
 
         self.calendar.remake()
         self.calendar.storeCalendar()
