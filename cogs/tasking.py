@@ -46,11 +46,11 @@ class CalendarDB():
 
     def storeCalendar(self, timeFrom = "now"):
         if timeFrom == "now":
-            now = datetime.now(tz = timezone("Europe/London")).strftime("%Y-%m-%dT%H:%M:%SZ")
+            lastDT = datetime.now(tz = timezone("UTC")).strftime("%Y-%m-%dT%H:%M:%SZ")
         else:
-            now = timeFrom
+            lastDT = timeFrom
 
-        request = self.collection.list(calendarId = "arcommdrive@gmail.com", timeMin = now, orderBy = "startTime", singleEvents = True)
+        request = self.collection.list(calendarId = "arcommdrive@gmail.com", timeMin = lastDT, orderBy = "startTime", singleEvents = True)
         #request = self.collection.list(calendarId = "bmpdcnk8pab1drvf4qgt4q1580@group.calendar.google.com", timeMin = now, orderBy = "startTime", singleEvents = True)
         response = request.execute()
         c = self.conn.cursor()
@@ -120,13 +120,11 @@ class Tasking(commands.Cog):
                     lastDatetime['datetime'] = "now"
                 else:   #Make sure the lastDatetime isn't in the past, otherwise will be announcing old events
                     if lastDatetime['datetime'] != "now":
-                        now = datetime.now(tz = timezone("Europe/London"))
-                        offset = str(now.utcoffset()).replace(":", "")[:-2]
+                        now = datetime.now(tz = timezone("UTC"))
+                        lastDT = lastDatetime['datetime'].replace("Z", "+00:00")
+                        lastDT = datetime.strptime(lastDT, "%Y-%m-%dT%H:%M:%S%z")
 
-                        eventStartTime = lastDatetime['datetime'].replace("Z", "+0{}".format(str(offset)))
-                        eventStartTime = datetime.strptime(eventStartTime, "%Y-%m-%dT%H:%M:%S%z")
-
-                        if eventStartTime < now:
+                        if lastDT < now:
                             lastDatetime['datetime'] = "now"
 
             self.calendar.storeCalendar(lastDatetime['datetime'])
@@ -137,16 +135,14 @@ class Tasking(commands.Cog):
                 event = self.calendar.pop()
 
                 if event:
-                    now = datetime.now(tz = timezone("Europe/London"))
-                    offset = str(now.utcoffset()).replace(":", "")[:-2]
-
-                    eventStartTime = event[2].replace("Z", "+0{}".format(str(offset)))
+                    now = datetime.now(tz = timezone("UTC"))
+                    eventStartTime = event[2].replace("Z", "+00:00")
                     eventStartTime = datetime.strptime(eventStartTime, "%Y-%m-%dT%H:%M:%S%z")
 
                     timeUntil = eventStartTime - now
-                    if timeUntil <= timedelta(days = 0, hours = 1, minutes = 0):
+                    if timeUntil <= timedelta(days = 0, hours = 1, minutes = 0) and timeUntil >= timedelta(days = 0, hours = 0, minutes = 10):
                         newAnnouncement = True
-                        lastDatetime['datetime'] = eventStartTime.strftime("%Y-%m-%dT%H:%M:%SZ")
+                        lastDatetime['datetime'] = event[3]
                         newTask = asyncio.Task(self.announce(timeUntil, event[1], event[2], event[3]))
                 else:
                     logger.debug('No event popped')
@@ -219,20 +215,21 @@ class Tasking(commands.Cog):
         timeUntilStr = str(timeUntil).split(".")[0] #Remove microseconds
 
         if re.search("recruit", summary.lower()) != None:
-            ping = "<@&{}>".format(self.utility.RECRUIT_ROLE)
+            ping = "<@&{}>".format(self.utility.RECRUIT_ROLE_ID)
         elif re.search("training", summary.lower()) != None:
-            ping = "<@&{}>".format(self.utility.TRAINING_ROLE)
+            ping = "<@&{}>".format(self.utility.TRAINING_ROLE_ID)
         else:
             ping = "@here"
 
         outString = "{}\n```md\n# {}\n\nStarting in {}\n\nStart: {} UTC\nEnd:   {} UTC```".format(ping, summary, timeUntilStr, startTimeString, endTimeString)
+        channel = self.utility.OP_NEWS_CHANNEL
         #outString = "{}\n```md\n# {}\n\nStarting in {}```".format(ping, summary, timeUntil)
-        await self.utility.send_message(self.utility.OP_NEWS_CHANNEL, outString)
+        await self.utility.send_message(channel, outString)
 
         await asyncio.sleep((timeUntil - timedelta(minutes = 5)).seconds)
 
         outString = "{}\n```md\n# {}\n\nStarting in 5 minutes```".format(ping, summary)
-        await self.utility.send_message(self.utility.OP_NEWS_CHANNEL, outString)
+        await self.utility.send_message(channel, outString)
 
     async def attendancePost(self):
         logger.debug("attendancePost called")
