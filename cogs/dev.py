@@ -19,7 +19,6 @@ def is_dev():
 class Dev(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.utility = bot.get_cog("Utility")
 
     #===Commands===#
 
@@ -126,8 +125,7 @@ class Dev(commands.Cog):
     
     @commands.Cog.listener()
     async def on_ready(self):
-        print("===Bot connected/reconnected===")
-        logger.info("===Bot connected/reconnected===")
+        self.utility = self.bot.get_cog("Utility")
 
 def setup(bot):
     bot.add_cog(Dev(bot))

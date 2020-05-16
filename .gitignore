@@ -128,3 +128,4 @@ resources/recruit_post.bak
 resources/last_modified.json
 *.json
 logs/
+resources/calendar.db

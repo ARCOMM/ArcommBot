@@ -5,12 +5,16 @@ import json
 import logging
 import os
 import re
+import sqlite3
 import traceback
 
 import aiohttp
 from bs4 import BeautifulSoup
 from discord import File
 from discord.ext import commands, tasks
+from googleapiclient.discovery import build
+from google.oauth2 import service_account
+from pytz import timezone
 
 logger = logging.getLogger('bot')
 
@@ -19,37 +23,78 @@ config.read('resources/config.ini')
 
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 
+SCOPES = ['https://www.googleapis.com/auth/calendar']
+SERVICE_ACCOUNT_FILE = 'resources/arcommbot-1c476e6f4869.json'
+
+credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+service = build('calendar', 'v3', credentials = credentials)
+
+class CalendarDB():
+    def __init__(self):
+        self.conn = sqlite3.connect('resources/calendar.db')
+        self.collection = service.events()
+        #self.remake()
+        #self.storeCalendar()
+
+    def remake(self):
+        c = self.conn.cursor()
+        try:
+            #c.execute("DROP TABLE calendar")
+            c.execute("CREATE TABLE calendar (event_id INTEGER PRIMARY KEY, summary STRING NOT NULL, start STRING NOT NULL, end STRING NOT NULL, UNIQUE(start))")
+        except Exception as e:
+            print(e)
+
+    def storeCalendar(self, timeFrom = "now"):
+        if timeFrom == "now":
+            lastDT = datetime.now(tz = timezone("UTC")).strftime("%Y-%m-%dT%H:%M:%SZ")
+        else:
+            lastDT = timeFrom
+
+        request = self.collection.list(calendarId = "arcommdrive@gmail.com", timeMin = lastDT, orderBy = "startTime", singleEvents = True)
+        #request = self.collection.list(calendarId = "bmpdcnk8pab1drvf4qgt4q1580@group.calendar.google.com", timeMin = now, orderBy = "startTime", singleEvents = True)
+        response = request.execute()
+        c = self.conn.cursor()
+        c.execute("DELETE FROM calendar")
+
+        for item in response['items']:
+            try:
+                c.execute("INSERT OR IGNORE INTO calendar (summary, start, end) VALUES(?, ?, ?)", (item['summary'], item['start']['dateTime'], item['end']['dateTime']))
+            except Exception as e:
+                None
+
+        self.conn.commit()
+
+    def pop(self):
+        c = self.conn.cursor()
+
+        c.execute("SELECT * FROM calendar ORDER BY event_id ASC LIMIT 1")
+        event = c.fetchone()
+        c.execute("DELETE FROM calendar WHERE event_id = (SELECT min(event_id) FROM calendar)")
+        
+        self.conn.commit()
+        
+        return event
+
 class Tasking(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.utility = bot.get_cog("Utility")
+    
+        self.calendar = CalendarDB()
         self.session = aiohttp.ClientSession()
-
-        self.recruitDebounce = False
-        self.attendanceDebounce = False
-
-        self.attendanceTask.start()
-        self.modcheckTask.start()
-        self.recruitTask.start()
 
     #===Tasks===#
 
     @tasks.loop(hours = 1)
     async def attendanceTask(self):
         logger.debug("attendanceTask called")
-        if not self.attendanceDebounce:
-            self.attendanceDebounce = True
-            targetTimeslot = [17, 20] #5pm -> 8pm
+        targetTimeslot = [17, 20] #5pm -> 8pm
 
-            now = datetime.utcnow()
-            #now = datetime(2020, 4, 25, 17)
-            if now.weekday() == 5: #Saturday
-                if now.hour >= targetTimeslot[0] and now.hour <= targetTimeslot[1]:
-                    logger.debug("Called within timeslot")
-                    await self.attendancePost()
-            self.attendanceDebounce = False
-        else:
-            logger.debug("Hit attendanceDebounce")
+        now = datetime.utcnow()
+        #now = datetime(2020, 4, 25, 17)
+        if now.weekday() == 5: #Saturday
+            if now.hour >= targetTimeslot[0] and now.hour <= targetTimeslot[1]:
+                logger.debug("Called within timeslot")
+                await self.attendancePost()
 
     @attendanceTask.before_loop
     async def before_attendanceTask(self):
@@ -64,6 +109,51 @@ class Tasking(commands.Cog):
 
         await asyncio.sleep((future - now).seconds)
     
+    @tasks.loop(minutes = 1)
+    async def calendarTask(self):
+        try:
+            lastDatetime = None
+            with open('resources/calendar_datetime.json', 'r') as f:
+                lastDatetime = json.load(f)
+                
+                if not ('datetime' in lastDatetime):
+                    lastDatetime['datetime'] = "now"
+                else:   #Make sure the lastDatetime isn't in the past, otherwise will be announcing old events
+                    if lastDatetime['datetime'] != "now":
+                        now = datetime.now(tz = timezone("UTC"))
+                        lastDT = lastDatetime['datetime'].replace("Z", "+00:00")
+                        lastDT = datetime.strptime(lastDT, "%Y-%m-%dT%H:%M:%S%z")
+
+                        if lastDT < now:
+                            lastDatetime['datetime'] = "now"
+
+            self.calendar.storeCalendar(lastDatetime['datetime'])
+            newAnnouncement = True
+
+            while newAnnouncement:
+                newAnnouncement = False
+                event = self.calendar.pop()
+
+                if event:
+                    now = datetime.now(tz = timezone("UTC"))
+                    eventStartTime = event[2].replace("Z", "+00:00")
+                    eventStartTime = datetime.strptime(eventStartTime, "%Y-%m-%dT%H:%M:%S%z")
+
+                    timeUntil = eventStartTime - now
+                    if timeUntil <= timedelta(days = 0, hours = 1, minutes = 0) and timeUntil >= timedelta(days = 0, hours = 0, minutes = 10):
+                        newAnnouncement = True
+                        lastDatetime['datetime'] = event[3]
+                        newTask = asyncio.Task(self.announce(timeUntil, event[1], event[2], event[3]))
+                else:
+                    logger.debug('No event popped')
+                    break
+
+            with open('resources/calendar_datetime.json', 'w') as f:
+                json.dump(lastDatetime, f)
+
+        except Exception as e:
+            logger.warning(e)
+
     @tasks.loop(hours = 1)
     async def modcheckTask(self):
         logger.debug("modcheckTask called")
@@ -83,18 +173,14 @@ class Tasking(commands.Cog):
     @tasks.loop(hours = 24)
     async def recruitTask(self):
         logger.debug("recruitTask called")
-        if not self.recruitDebounce:
-            self.recruitDebounce = True
-            targetDays = [0, 2, 4] #Monday, Wednesday, Friday
-            now = datetime.utcnow()
-            #now = datetime(2020, 4, 22) #A Wednesday
-            if now.weekday() in targetDays:
-                logger.debug("Called within targetDays")
-                channel = self.utility.STAFF_CHANNEL
-                await self.recruitmentPost(channel, pingAdmins = True)
-            self.recruitDebounce = False
-        else:
-            logger.debug("Hit recruitDebounce")
+
+        targetDays = [0, 2, 4] #Monday, Wednesday, Friday
+        now = datetime.utcnow()
+        #now = datetime(2020, 4, 22) #A Wednesday
+        if now.weekday() in targetDays:
+            logger.debug("Called within targetDays")
+            channel = self.utility.STAFF_CHANNEL
+            await self.recruitmentPost(channel, pingAdmins = True)
 
     @recruitTask.before_loop
     async def before_recruitTask(self):
@@ -118,6 +204,32 @@ class Tasking(commands.Cog):
         await asyncio.sleep((future - now).seconds)
     
     #===Utility===#
+
+    async def announce(self, timeUntil, summary, startTime, endTime):
+        startTime = datetime.strptime(startTime, "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone("UTC"))
+        startTimeString = startTime.strftime('%H:%M:%S')
+
+        endTime = datetime.strptime(endTime, "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone("UTC"))
+        endTimeString = endTime.strftime('%H:%M:%S')
+
+        timeUntilStr = str(timeUntil).split(".")[0] #Remove microseconds
+
+        if re.search("recruit", summary.lower()) != None:
+            ping = "<@&{}>".format(self.utility.RECRUIT_ROLE_ID)
+        elif re.search("training", summary.lower()) != None:
+            ping = "<@&{}>".format(self.utility.TRAINING_ROLE_ID)
+        else:
+            ping = "@here"
+
+        outString = "{}\n```md\n# {}\n\nStarting in {}\n\nStart: {} UTC\nEnd:   {} UTC```".format(ping, summary, timeUntilStr, startTimeString, endTimeString)
+        channel = self.utility.OP_NEWS_CHANNEL
+        #outString = "{}\n```md\n# {}\n\nStarting in {}```".format(ping, summary, timeUntil)
+        await self.utility.send_message(channel, outString)
+
+        await asyncio.sleep((timeUntil - timedelta(minutes = 5)).seconds)
+
+        outString = "{}\n```md\n# {}\n\nStarting in 5 minutes```".format(ping, summary)
+        await self.utility.send_message(channel, outString)
 
     async def attendancePost(self):
         logger.debug("attendancePost called")
@@ -172,7 +284,7 @@ class Tasking(commands.Cog):
                     None
                     #logger.info("Response 304 - Not Changed: {}".format(mod))
                 else:
-                    logged.warning("{} GET error: {} {} - {}".format(mod, response.status, response.reason, await response.text()))
+                    logger.warning("{} GET error: {} {} - {}".format(mod, response.status, response.reason, await response.text()))
                 
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
@@ -288,6 +400,19 @@ class Tasking(commands.Cog):
 
         return ""
 
+    #===Listeners===#
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.utility = self.bot.get_cog("Utility")
+
+        self.calendar.remake()
+        self.calendar.storeCalendar()
+        
+        self.calendarTask.start()
+        self.attendanceTask.start()
+        self.modcheckTask.start()
+        self.recruitTask.start()
 
 def setup(bot):
     bot.add_cog(Tasking(bot))

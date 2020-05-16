@@ -12,11 +12,6 @@ config.read('resources/config.ini')
 class Utility(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        
-        self.ADMIN_CHANNEL = bot.get_channel(int(config['discord']['admin_channel']))
-        self.STAFF_CHANNEL = bot.get_channel(int(config['discord']['staff_channel']))
-        self.TEST_CHANNEL = bot.get_channel(int(config['discord']['test_channel']))
-        self.ADMIN_ROLE_ID = int(config['discord']['admin_role']) 
 
     async def send_message(self, channel, message: str):
         """Send a message to the text channel"""
@@ -76,6 +71,19 @@ class Utility(commands.Cog):
 
     def roleListKey(self, elem):
         return elem.name.lower()
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print("===Bot connected/reconnected===")
+        logger.info("===Bot connected/reconnected===")
+
+        self.ADMIN_CHANNEL = self.bot.get_channel(int(config['discord']['admin_channel']))
+        self.OP_NEWS_CHANNEL = self.bot.get_channel(int(config['discord']['op_news_channel']))
+        self.STAFF_CHANNEL = self.bot.get_channel(int(config['discord']['staff_channel']))
+        self.TEST_CHANNEL = self.bot.get_channel(int(config['discord']['test_channel']))
+        self.ADMIN_ROLE_ID = int(config['discord']['admin_role'])
+        self.RECRUIT_ROLE_ID = int(config['discord']['recruit_role'])
+        self.TRAINING_ROLE_ID = int(config['discord']['training_role']) 
 
 def setup(bot):
     bot.add_cog(Utility(bot))
