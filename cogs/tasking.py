@@ -378,6 +378,7 @@ class Tasking(commands.Cog):
                             None
                             #logger.info("Mod '{}' has not been updated".format(modName))
                     else:
+                        logger.info("Mod '{}' added to lastModified".format(modName))
                         lastModified['steam'][modName] = timeUpdated
             else:
                 logger.warning("steam POST error: {} {} - {}".format(response.status, response.reason, await response.text()))
