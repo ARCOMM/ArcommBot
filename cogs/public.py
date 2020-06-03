@@ -272,7 +272,6 @@ class Public(commands.Cog):
         timeUnits = [[dt.days, "days"], [dt.seconds//3600, "hours"], [(dt.seconds//60) % 60, "minutes"]]
 
         for unit in timeUnits:
-            print(unit)
             if unit[0] == 0:
                 timeUnits.remove(unit)
             elif unit[0] == 1: # Remove s from end of word if singular
