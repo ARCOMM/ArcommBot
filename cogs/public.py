@@ -91,7 +91,7 @@ class Public(commands.Cog):
         
         await self.utility.send_message(ctx.channel, outString)
 
-    @commands.command()
+    @commands.command(aliases = ['op'])
     async def optime(self, ctx, modifier = '0', timez = None):
         """Time left until optime
 
