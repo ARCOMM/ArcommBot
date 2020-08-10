@@ -10,7 +10,7 @@ import traceback
 
 import aiohttp
 from bs4 import BeautifulSoup
-from discord import File
+from discord import File, Game
 from discord.ext import commands, tasks
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
@@ -104,7 +104,7 @@ class Tasking(commands.Cog):
 
         now = datetime.utcnow()
         #now = datetime(now.year, now.month, now.day, 16, 59, 55)
-        future = datetime(now.year, now.month, now.day, now.hour + 1, 1)
+        future = datetime(now.year, now.month, now.day, now.hour + 1)
         logger.debug("{} seconds until attendanceTask called".format((future - now).seconds))
 
         await asyncio.sleep((future - now).seconds)
@@ -200,6 +200,26 @@ class Tasking(commands.Cog):
             future += timedelta(days = 1)
 
         logger.debug("{} seconds until recruitTask called".format((future - now).seconds))
+
+        await asyncio.sleep((future - now).seconds)
+    
+    @tasks.loop(minutes = 1)
+    async def presenceTask(self):
+        timeLeft = self.utility.timeUntil("optime")
+        presenceString = "{}:{}:00 until optime".format(timeLeft.seconds // 3600, (timeLeft.seconds // 60) % 60)
+        
+        await self.bot.change_presence(activity = Game(name = presenceString))
+    
+    @presenceTask.before_loop
+    async def before_presenceTask(self):
+        """Sync up presenceTask to on the minute"""
+        logger.debug("before_presenceTask called")
+        await self.bot.wait_until_ready()
+
+        now = datetime.utcnow()
+        #now = datetime(now.year, now.month, now.day, 16, 59, 55)
+        future = datetime(now.year, now.month, now.day, now.hour, now.minute + 1)
+        logger.debug("{} seconds until presenceTask called".format((future - now).seconds))
 
         await asyncio.sleep((future - now).seconds)
     
@@ -378,6 +398,7 @@ class Tasking(commands.Cog):
                             None
                             #logger.info("Mod '{}' has not been updated".format(modName))
                     else:
+                        logger.info("Mod '{}' added to lastModified".format(modName))
                         lastModified['steam'][modName] = timeUpdated
             else:
                 logger.warning("steam POST error: {} {} - {}".format(response.status, response.reason, await response.text()))
@@ -413,6 +434,7 @@ class Tasking(commands.Cog):
         self.attendanceTask.start()
         self.modcheckTask.start()
         self.recruitTask.start()
+        self.presenceTask.start()
 
 def setup(bot):
     bot.add_cog(Tasking(bot))

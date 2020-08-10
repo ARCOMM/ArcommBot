@@ -85,13 +85,13 @@ class Public(commands.Cog):
         """Time left until opday (Saturday optime)"""
         logger.debug(".opday called")
 
-        dt = self.timeUntil("opday")
+        dt = self.utility.timeUntil("opday")
         dt = self.formatDt(dt)        
         outString = "There {} until opday!".format(dt)
         
         await self.utility.send_message(ctx.channel, outString)
 
-    @commands.command()
+    @commands.command(aliases = ['op'])
     async def optime(self, ctx, modifier = '0', timez = None):
         """Time left until optime
 
@@ -111,7 +111,7 @@ class Public(commands.Cog):
             timez = modifier
             modifier = 0
 
-        dt = self.timeUntil("optime", modifier)
+        dt = self.utility.timeUntil("optime", modifier)
         dt = self.formatDt(dt)
         
         if modifier == 0:
@@ -272,7 +272,6 @@ class Public(commands.Cog):
         timeUnits = [[dt.days, "days"], [dt.seconds//3600, "hours"], [(dt.seconds//60) % 60, "minutes"]]
 
         for unit in timeUnits:
-            print(unit)
             if unit[0] == 0:
                 timeUnits.remove(unit)
             elif unit[0] == 1: # Remove s from end of word if singular
@@ -298,24 +297,6 @@ class Public(commands.Cog):
         isAre = "is" if timeUnits[0][0] == 1 else "are"
 
         return "{} {}".format(isAre, dtString)
-    
-    def timeUntil(self, time = "opday", modifier = 0):
-        logger.debug("timeUntil called with time = {}".format(time))
-
-        today = datetime.now(tz = timezone('Europe/London'))
-        opday = None
-
-        if time == "opday":
-            daysUntilOpday = timedelta((12 - today.weekday()) % 7)
-            opday = today + daysUntilOpday
-            opday = opday.replace(hour = 18, minute = 0, second = 0)
-        elif time == "optime":
-            opday = today
-            opday = opday.replace(hour = 18 + modifier, minute = 0, second = 0)
-            if today.hour >= 18:
-                opday = opday.replace(day = today.day + 1)
-
-        return opday - today
 
     #===Listeners===#
     
