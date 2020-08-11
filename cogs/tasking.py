@@ -206,8 +206,10 @@ class Tasking(commands.Cog):
     @tasks.loop(minutes = 1)
     async def presenceTask(self):
         timeLeft = self.utility.timeUntil("optime")
-        presenceString = "{}:{}:00 until optime".format(timeLeft.seconds // 3600, (timeLeft.seconds // 60) % 60)
-        
+        minutes = (timeLeft.seconds // 60) % 60
+        minuteZero = "0" if minutes < 10 else ""
+        presenceString = "{}:{}{}:00 until optime".format(timeLeft.seconds // 3600, minuteZero, minutes)
+            
         await self.bot.change_presence(activity = Game(name = presenceString))
     
     @presenceTask.before_loop
