@@ -75,8 +75,7 @@ class Utility(commands.Cog):
         return elem.name.lower()
 
     def timeUntil(self, time = "opday", modifier = 0):
-        logger.debug("timeUntil called with time = {}".format(time))
-
+        #logger.debug("timeUntil called with time = {}".format(time))
         today = datetime.now(tz = timezone('Europe/London'))
         opday = None
 
