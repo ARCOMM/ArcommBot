@@ -78,7 +78,7 @@ class CalendarDB():
 class Tasking(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-    
+        self.utility = self.bot.get_cog("Utility")
         self.calendar = CalendarDB()
         self.session = aiohttp.ClientSession()
 
