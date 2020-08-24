@@ -86,8 +86,8 @@ class Utility(commands.Cog):
         elif time == "optime":
             opday = today
             opday = opday.replace(hour = 18 + modifier, minute = 0, second = 0)
-            if today.hour >= 18:
-                opday = opday.replace(day = today.day + 1)
+            if (today > opday):
+                opday = opday.replace(day = opday.day + 1)
 
         return opday - today
     
