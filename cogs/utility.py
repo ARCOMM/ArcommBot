@@ -3,7 +3,7 @@ import logging
 import re
 
 from discord.ext import commands
-from datetime import datetime
+from datetime import datetime, timedelta
 from pytz import timezone
 
 logger = logging.getLogger('bot')
@@ -75,8 +75,7 @@ class Utility(commands.Cog):
         return elem.name.lower()
 
     def timeUntil(self, time = "opday", modifier = 0):
-        logger.debug("timeUntil called with time = {}".format(time))
-
+        #logger.debug("timeUntil called with time = {}".format(time))
         today = datetime.now(tz = timezone('Europe/London'))
         opday = None
 
@@ -87,8 +86,8 @@ class Utility(commands.Cog):
         elif time == "optime":
             opday = today
             opday = opday.replace(hour = 18 + modifier, minute = 0, second = 0)
-            if today.hour >= 18:
-                opday = opday.replace(day = today.day + 1)
+            if (today > opday):
+                opday = opday.replace(day = opday.day + 1)
 
         return opday - today
     

@@ -9,6 +9,7 @@ logger = logging.getLogger('bot')
 class Staff(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.utility = self.bot.get_cog("Utility")
 
     #===Commands===#
     

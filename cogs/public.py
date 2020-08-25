@@ -30,6 +30,7 @@ EXTRA_TIMEZONES = {
 class Public(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.utility = self.bot.get_cog("Utility")
         self.session = aiohttp.ClientSession()
 
     #===Commands===#
@@ -87,7 +88,7 @@ class Public(commands.Cog):
 
         dt = self.utility.timeUntil("opday")
         dt = self.formatDt(dt)        
-        outString = "There {} until opday!".format(dt)
+        outString = "Opday starts in {}!".format(dt)
         
         await self.utility.send_message(ctx.channel, outString)
 
@@ -113,13 +114,13 @@ class Public(commands.Cog):
 
         dt = self.utility.timeUntil("optime", modifier)
         dt = self.formatDt(dt)
-        
+
         if modifier == 0:
-            outString = "There {} until optime!".format(dt)
+            outString = "Optime starts in {}!".format(dt)
         elif modifier > 0:
-            outString = "There {} until optime +{}!".format(dt, modifier)
+            outString = "Optime +{} starts in {}!".format(modifier, dt)
         else:
-            outString = "There {} until optime {}!".format(dt, modifier)
+            outString = "Optime {} starts in {}!".format(modifier, dt)
       
         if timez != None:
             try:
@@ -267,36 +268,35 @@ class Public(commands.Cog):
     #===Utility===#
 
     def formatDt(self, dt):
-        # TODO: s not removed on +1/-1 messages as time unit's aren't modified
         logger.debug("formatDt called")
         timeUnits = [[dt.days, "days"], [dt.seconds//3600, "hours"], [(dt.seconds//60) % 60, "minutes"]]
+        outUnits = []
 
         for unit in timeUnits:
-            if unit[0] == 0:
-                timeUnits.remove(unit)
-            elif unit[0] == 1: # Remove s from end of word if singular
-                unit[1] = unit[1][:-1] 
+            if unit[0] != 0:
+                if unit[0] == 1: # Remove s from end of word if singular
+                    unit[1] = unit[1][:-1]
 
+                outUnits.append(unit)
+                    
         dtString = ""
         i = 0
-        for unit in timeUnits:
+        for unit in outUnits:
             i += 1
-            if i == len(timeUnits):
+            if i == len(outUnits):
                 if dtString != "":
-                    if len(timeUnits) > 2:
+                    if len(outUnits) > 2:
                         dtString += (", and {} {}".format(unit[0], unit[1]))
                     else:
                         dtString += (" and {} {}".format(unit[0], unit[1]))
                 else:
                     dtString += ("{} {}".format(unit[0], unit[1]))
-            elif i == len(timeUnits) - 1:
+            elif i == len(outUnits) - 1:
                 dtString += ("{} {}".format(unit[0], unit[1]))
             else:
                 dtString += ("{} {}, ".format(unit[0], unit[1]))
 
-        isAre = "is" if timeUnits[0][0] == 1 else "are"
-
-        return "{} {}".format(isAre, dtString)
+        return dtString
 
     #===Listeners===#
     
