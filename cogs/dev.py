@@ -109,7 +109,7 @@ class Dev(commands.Cog):
         if not ctx.command: return
         command = ctx.command.name
 
-        if command == "optime" and errorType == commands.errors.CommandInvokeError:
+        if (command == "optime") and (str(error) == "Command raised an exception: ValueError: hour must be in 0..23"):
             logger.debug("Optime modifier is too large")
             await self.utility.send_message(ctx.channel, "Optime modifier is too large")
         else:
