@@ -114,7 +114,7 @@ class Public(commands.Cog):
 
         dt = self.utility.timeUntil("optime", modifier)
         dt = self.formatDt(dt)
-        
+
         if modifier == 0:
             outString = "Optime starts in {}!".format(dt)
         elif modifier > 0:
@@ -270,26 +270,28 @@ class Public(commands.Cog):
     def formatDt(self, dt):
         logger.debug("formatDt called")
         timeUnits = [[dt.days, "days"], [dt.seconds//3600, "hours"], [(dt.seconds//60) % 60, "minutes"]]
+        outUnits = []
 
         for unit in timeUnits:
-            if unit[0] == 0:
-                timeUnits.remove(unit)
-            elif unit[0] == 1: # Remove s from end of word if singular
-                unit[1] = unit[1][:-1] 
+            if unit[0] != 0:
+                if unit[0] == 1: # Remove s from end of word if singular
+                    unit[1] = unit[1][:-1]
 
+                outUnits.append(unit)
+                    
         dtString = ""
         i = 0
-        for unit in timeUnits:
+        for unit in outUnits:
             i += 1
-            if i == len(timeUnits):
+            if i == len(outUnits):
                 if dtString != "":
-                    if len(timeUnits) > 2:
+                    if len(outUnits) > 2:
                         dtString += (", and {} {}".format(unit[0], unit[1]))
                     else:
                         dtString += (" and {} {}".format(unit[0], unit[1]))
                 else:
                     dtString += ("{} {}".format(unit[0], unit[1]))
-            elif i == len(timeUnits) - 1:
+            elif i == len(outUnits) - 1:
                 dtString += ("{} {}".format(unit[0], unit[1]))
             else:
                 dtString += ("{} {}, ".format(unit[0], unit[1]))
