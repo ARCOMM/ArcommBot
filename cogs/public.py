@@ -39,9 +39,7 @@ class Public(commands.Cog):
     async def dst(self, ctx):
         """Check if daylight savings has started (in London)"""
 
-        timez = timezone("Europe/London")
-        outString = "DST is in effect" if datetime.now(timez).dst() else "DST is ***not*** in effect"
-
+        outString = "DST is in effect" if datetime.now(timezone("Europe/London")).dst() else "DST is ***not*** in effect"
         await self.utility.send_message(ctx.channel, outString)
 
     @commands.command()
@@ -53,18 +51,19 @@ class Public(commands.Cog):
         '''
 
         roleQuery = " ".join(args)
-        author = ctx.author
         role = self.utility.searchRoles(ctx, roleQuery, reserved = True, censorReserved = False)
         
         if role:
             outString = ""
             members = role.members
             members.sort(key = self.utility.roleListKey)
+
             for member in members:
                 outString += "{}\n".format(member.name)
+
             await self.utility.send_message(ctx.channel, "```md\n# {}\n{}```".format(role.name, outString))
         else:
-            await self.utility.send_message(ctx.channel, "{} Role **{}** does not exist".format(author.mention, roleQuery))
+            await self.utility.send_message(ctx.channel, "{} Role **{}** does not exist".format(ctx.author.mention, roleQuery))
     
     @commands.command(aliases = ['myranks'])
     async def myroles(self, ctx):
@@ -158,7 +157,7 @@ class Public(commands.Cog):
     
     @commands.command(aliases = ['rank'])
     async def role(self, ctx, *args):
-        """Join or leave a role, with autocomplete
+        """Join or leave a role (with autocomplete)
         Usage:
             .role rolename
             --Join or leave rolename
@@ -188,16 +187,15 @@ class Public(commands.Cog):
     async def roles(self, ctx):
         """Get a list of joinable roles"""
 
-        member = ctx.author
-        roles = self.utility.getRoles(ctx, reserved = False, sort = True)
-        outString = ""
         longestName = 0
         roleList = []
 
-        for role in roles:
+        for role in self.utility.getRoles(ctx, reserved = False, sort = True):
             roleList.append(role)
             if len(role.name) > longestName:
                 longestName = len(role.name)
+        
+        outString = ""
 
         for role in roleList:
             numOfMembers = str(len(role.members))
