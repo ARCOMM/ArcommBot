@@ -59,9 +59,9 @@ class Public(commands.Cog):
             members.sort(key = self.utility.roleListKey)
 
             for member in members:
-                outString += "{}\n".format(member.name)
+                outString += "{} ;{}\n".format(member.nick, member.name) if (member.nick != None) else "{}\n".format(member.name)
 
-            await self.utility.send_message(ctx.channel, "```md\n# {}\n{}```".format(role.name, outString))
+            await self.utility.send_message(ctx.channel, "```ini\n[ {} ]\n{}```".format(role.name, outString))
         else:
             await self.utility.send_message(ctx.channel, "{} Role **{}** does not exist".format(ctx.author.mention, roleQuery))
     
