@@ -38,7 +38,6 @@ class Public(commands.Cog):
     @commands.command(aliases = ['daylightsavings'])
     async def dst(self, ctx):
         """Check if daylight savings has started (in London)"""
-        logger.debug(".dst called")
 
         timez = timezone("Europe/London")
         outString = "DST is in effect" if datetime.now(timez).dst() else "DST is ***not*** in effect"
@@ -52,7 +51,6 @@ class Public(commands.Cog):
             Usage:
                 .members rolename
         '''
-        logger.debug(".members called")
 
         roleQuery = " ".join(args)
         author = ctx.author
@@ -71,7 +69,6 @@ class Public(commands.Cog):
     @commands.command(aliases = ['myranks'])
     async def myroles(self, ctx):
         """Get a list of roles you're in"""
-        logger.debug(".myroles called")
 
         roles = self.utility.getRoles(ctx, reserved = True, sort = True, personal = True)
         outString = ""
@@ -84,7 +81,6 @@ class Public(commands.Cog):
     @commands.command(aliases = ['opday'])
     async def opstart(self, ctx):
         """Time left until opday (Saturday optime)"""
-        logger.debug(".opday called")
 
         dt = self.utility.timeUntil("opday")
         dt = self.formatDt(dt)        
@@ -103,7 +99,6 @@ class Public(commands.Cog):
             optime -x timezone
             Timezones can be: CET or Europe/London or US/Pacific etc.
         """
-        logger.debug(".optime called")
 
         try:
             modifier = int(modifier)
@@ -148,7 +143,6 @@ class Public(commands.Cog):
             .ping host
             --ping host ip/address
         """
-        logger.debug(".ping called")
 
         if host == None:
             await self.utility.send_message(ctx.channel, "Pong!")
@@ -172,7 +166,6 @@ class Public(commands.Cog):
             .role ro
             --Join or leave rolename
         """
-        logger.debug(".role called")
 
         roleQuery = " ".join(args)
         member = ctx.author
@@ -194,7 +187,6 @@ class Public(commands.Cog):
     @commands.command(aliases = ['ranks'])
     async def roles(self, ctx):
         """Get a list of joinable roles"""
-        logger.debug(".roles called")
 
         member = ctx.author
         roles = self.utility.getRoles(ctx, reserved = False, sort = True)
@@ -224,7 +216,6 @@ class Public(commands.Cog):
             .sqf BIS fnc helicopterDamage
             --https://community.bistudio.com/wiki/BIS_fnc_helicopterDamage
         """
-        logger.debug(".sqf called")
 
         sqfQuery = "_".join(args)
         wikiUrl = "https://community.bistudio.com/wiki/{}".format(sqfQuery)
@@ -258,7 +249,6 @@ class Public(commands.Cog):
     @commands.command(aliases = ['utc'])
     async def zulu(self, ctx):
         '''Return Zulu (UTC) time'''
-        logger.debug(".zulu called")
 
         now = datetime.utcnow()
         outString = "It is currently {}:{}:{} Zulu time (UTC)".format(now.hour, now.minute, now.second)
@@ -268,7 +258,6 @@ class Public(commands.Cog):
     #===Utility===#
 
     def formatDt(self, dt):
-        logger.debug("formatDt called")
         timeUnits = [[dt.days, "days"], [dt.seconds//3600, "hours"], [(dt.seconds//60) % 60, "minutes"]]
         outUnits = []
 

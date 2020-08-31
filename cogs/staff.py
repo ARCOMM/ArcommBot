@@ -17,7 +17,6 @@ class Staff(commands.Cog):
     @commands.has_role("Staff")
     async def addrole(self, ctx, *args):
         '''Create a new role'''
-        logger.debug(".addrank called")
 
         roleQuery = " ".join(args)
         member = ctx.author
@@ -33,7 +32,6 @@ class Staff(commands.Cog):
     @commands.has_role("Staff")
     async def removerole(self, ctx, *args):
         '''Remove an existing role'''
-        logger.debug('.removerank called')
 
         roleQuery = " ".join(args)
         member = ctx.author
@@ -81,7 +79,6 @@ class Staff(commands.Cog):
             -- Output contents of resources/recruit_post.md
             .recruitpost <<with attached file called recruit_post.md>>
             -- Overwrites resources/recruit_post.md, a backup is saved as resources/recruit_post.bak"""
-        logger.debug('.recruitpost called')
 
         attachments = ctx.message.attachments
 
@@ -116,8 +113,6 @@ class Staff(commands.Cog):
     #===Utility===#
         
     async def recruitmentPost(self, channel):
-        logger.debug("recruitmentPost called")
-
         introString = "Post recruitment on <https://www.reddit.com/r/FindAUnit>"  
         await channel.send(introString, file = File("resources/recruit_post.md", filename = "recruit_post.md"))
       
