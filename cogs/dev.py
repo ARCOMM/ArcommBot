@@ -26,8 +26,6 @@ class Dev(commands.Cog):
     @commands.command(name = "logs", hidden = True)
     @is_dev()
     async def _logs(self, ctx, logName):
-        logger.debug(".logs called")
-
         for fileName in os.listdir("logs/"):
             if re.match(logName, fileName):
                 logFile = File("logs/{}".format(fileName), filename = fileName)
@@ -41,7 +39,6 @@ class Dev(commands.Cog):
     @commands.command(name = "reload", hidden = True)
     @is_dev()
     async def _reload(self, ctx, ext: str):
-        logger.debug(".reload called")
         try:
             self.bot.reload_extension("cogs." + ext)
             logger.info("=========Reloaded {} extension=========".format(ext))
@@ -54,13 +51,11 @@ class Dev(commands.Cog):
     @commands.command(name = "shutdown", hidden = True)
     @commands.is_owner()
     async def _shutdown(self, ctx):
-        logger.debug(".shutdown called")
         exit()
 
     @commands.command(name = "update", hidden = True)
     @is_dev()
     async def _update(self, ctx):
-        logger.debug(".updatecog called")
         attachments = ctx.message.attachments
 
         if attachments != []:
@@ -96,7 +91,6 @@ class Dev(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        logger.debug("on_command_error called")
         errorType = type(error)
 
         if errorType == commands.errors.CommandNotFound:

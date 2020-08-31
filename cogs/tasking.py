@@ -300,7 +300,7 @@ class Tasking(commands.Cog):
                     lastModified['github'][mod] = response.headers['Last-Modified']
                     response = await response.json()
                     
-                    changelogUrl = "https://github.com/{}/releases/tag/{}".format(mod, response['tag_name'])
+                    changelogUrl = "https://github.com/{}/releases/tag/{}".format(config['github'][mod], response['tag_name'])
                     updatePost += "**{}** has released a new version ({})\n<{}>\n".format(mod, response['tag_name'], changelogUrl)
                 elif response.status == 304: #Repo hasn't been updated
                     None

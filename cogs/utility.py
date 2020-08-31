@@ -20,7 +20,6 @@ class Utility(commands.Cog):
 
         await channel.trigger_typing()
         newMessage = await channel.send(message)
-
         logger.info("Sent message to {} : {}".format(channel, newMessage.content))
 
         return newMessage
