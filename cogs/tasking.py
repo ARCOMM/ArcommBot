@@ -324,33 +324,27 @@ class Tasking(commands.Cog):
         updatePost = ""
         repoChanged = False
 
-        async with self.session.get('http://cup-arma3.org/download') as response:
+        async with self.session.get('https://www.cup-arma3.org/download') as response:
             if response.status == 200:
                 logger.info("Response 200 - Success")
                 soup = BeautifulSoup(await response.text(), features = "lxml")
-                for row in soup.find('table', {'class': 'table'}).find_all('tr'):
-                    td = row.find('td')
-                    if td:
-                        version = re.search(r' ([0-9.]+)(\S+)?', td.text).group(0)
-                        name = re.sub(version, '', td.text)
-                        version = version[1:] # Remove whitespace
+
+                for header in soup.find_all('h3'):
+                    modName = header.text
+                    modVersion = header.parent.findNext("p").text
+                    modVersion = modVersion.split()[0]
                         
-                        if name in lastModified['cup']:
-                            if version != lastModified['cup'][name]:
-                                logger.info("Mod '{}' has been updated".format(name))
+                    if modName in lastModified['cup']:
+                        if modVersion != lastModified['cup'][modName]:
+                            logger.info("Mod '{}' has been updated".format(modName))
 
-                                repoChanged = True
-                                lastModified['cup'][name] = version
+                            repoChanged = True
+                            lastModified['cup'][modName] = modVersion
 
-                                urlName = name.replace(" ", "_")
-                                changelogUrl = "<http://cup-arma3.org/downloads/CUP_{}-{}-changelog.txt>".format(urlName, version)
-                                updatePost += "**{}** has released a new version ({})\n{}\n".format("CUP - {}".format(name), version, changelogUrl)
-                            else:
-                                None
-                                #logger.info("Mod '{}' has not been updated".format(name))
-                        else:
-                            logger.debug("Mod '{}' not in lastModified".format(name))
-                            lastModified['cup'][name] = version
+                            updatePost += "**{}** has released a new version ({})\n".format(modName, modVersion)
+                    else:
+                        logger.debug("Mod '{}' not in lastModified".format(modName))
+                        lastModified['cup'][modName] = modVersion
             else:
                 logger.warning("cup GET error: {} {} - {}".format(response.status, response.reason, await response.text()))
         
@@ -396,9 +390,6 @@ class Tasking(commands.Cog):
 
                             updatePost += "**{}** has released a new version ({})\n{}\n".format(modName, "", '<https://steamcommunity.com/sharedfiles/filedetails/changelog/{}>'.format(mod['publishedfileid']))
                             updatePost += "```\n{}```\n".format(await self.getSteamChangelog(mod['publishedfileid']))
-                        else:
-                            None
-                            #logger.info("Mod '{}' has not been updated".format(modName))
                     else:
                         logger.info("Mod '{}' added to lastModified".format(modName))
                         lastModified['steam'][modName] = timeUpdated
@@ -424,6 +415,15 @@ class Tasking(commands.Cog):
         return ""
 
     #===Listeners===#
+
+    def cog_unload(self):
+        logger.warning("Cancelling tasks...")
+        self.calendarTask.cancel()
+        self.attendanceTask.cancel()
+        self.modcheckTask.cancel()
+        self.recruitTask.cancel()
+        self.presenceTask.cancel()
+        logger.warning("Tasks cancelled at {}".format(datetime.now()))
 
     @commands.Cog.listener()
     async def on_ready(self):
