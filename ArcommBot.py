@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 import logging
 import logging.handlers
+import sys
 
 from discord.ext import commands
 
@@ -35,6 +36,9 @@ def loadExtensions():
         except Exception as e:
             logger.critical("Failed to load {} extension\n".format(extension))
             logger.critical(e)   
+
+def restart():
+    os.execv(sys.executable, [sys.executable, __file__] + sys.argv)
 
 if __name__ == "__main__":
     setupLogging()
