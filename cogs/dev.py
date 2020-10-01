@@ -83,10 +83,18 @@ class Dev(commands.Cog):
 
                 logger.info("{} successfully updated".format(newCog.filename))
                 await self.utility.send_message(ctx.channel, "{} successfully updated".format(newCog.filename))
+
+                return newCog.filename.split(".")[0]
             else:
                 logger.debug("Filename not in cogs")
         else:
             logger.debug("Found no attachment")
+
+    @commands.command(name = "upload", hidden = True)
+    @is_dev()
+    async def _upload(self, ctx):
+        filename = await self._update(ctx)
+        await self._reload(ctx, filename)
 
     #===Listeners===#
 
