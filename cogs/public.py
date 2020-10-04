@@ -1,3 +1,4 @@
+import configparser
 from datetime import datetime, timedelta
 import logging
 import os
@@ -9,8 +10,18 @@ from bs4 import BeautifulSoup
 import discord
 from discord.ext import commands
 from pytz import timezone, UnknownTimeZoneError
+from twitchAPI import Twitch
 
 logger = logging.getLogger('bot')
+
+config = configparser.ConfigParser()
+config.read('resources/config.ini')
+
+TWITCH_ID = os.getenv('TWITCH_ID')
+TWITCH_SECRET = os.getenv('TWITCH_SECRET')
+
+twitch = Twitch(TWITCH_ID, TWITCH_SECRET)
+twitch.authenticate_app([])
 
 EXTRA_TIMEZONES = {
     "PT" : "America/Los_Angeles",
@@ -285,12 +296,35 @@ class Public(commands.Cog):
 
         return dtString
 
+    def getEmojiCountFromReactionList(self, emoji, reactionList):
+        for reaction in reactionList:
+            if (emoji == reaction.emoji):
+                return reaction.count
+        return 0
+    
     #===Listeners===#
     
     @commands.Cog.listener()
     async def on_ready(self):
         self.utility = self.bot.get_cog("Utility")
         await self.utility.send_message(self.utility.TEST_CHANNEL, "ArcommBot is fully loaded")
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        if (payload.emoji.name == "📹"): #:video_camera:
+            message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
+            
+            if (self.getEmojiCountFromReactionList("👍", message.reactions) == 0):
+                clip = twitch.get_clips(clip_id = ["ThankfulConcernedOstrichSuperVinlin"])['data'][0]
+                video = twitch.get_videos(ids=[clip['video_id']])['data'][0]
+                createdDt = video['created_at'][:-1].split('T')
+                createDate, createdTime = createdDt[0], createdDt[1]
+                messageWithMetadata = "```[{}][{}][{}][{}][{}]```{}".format(clip['broadcaster_name'], clip['title'], video['title'], createDate, createdTime, message.clean_content)
+
+                await self.utility.send_message(self.utility.TEST_CHANNEL, messageWithMetadata)
+                await message.add_reaction("👍")
+
+        #await self.utility.send_message(self.utility.TEST_CHANNEL, "```{}```".format(payload.emoji.name))
 
 def setup(bot):
     bot.add_cog(Public(bot))
