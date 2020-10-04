@@ -302,6 +302,9 @@ class Public(commands.Cog):
                 return reaction.count
         return 0
     
+    def getTwitchClipUrlFromMessage(self, message):
+        return 
+    
     #===Listeners===#
     
     @commands.Cog.listener()
@@ -315,14 +318,26 @@ class Public(commands.Cog):
             message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
             
             if (self.getEmojiCountFromReactionList("👍", message.reactions) == 0):
-                clip = twitch.get_clips(clip_id = ["ThankfulConcernedOstrichSuperVinlin"])['data'][0]
-                video = twitch.get_videos(ids=[clip['video_id']])['data'][0]
-                createdDt = video['created_at'][:-1].split('T')
-                createDate, createdTime = createdDt[0], createdDt[1]
-                messageWithMetadata = "```[{}][{}][{}][{}][{}]```{}".format(clip['broadcaster_name'], clip['title'], video['title'], createDate, createdTime, message.clean_content)
+                clipId = re.search("clips.twitch.tv/(\w+)", message.clean_content)
+                messageWithMetadata = ""
 
-                await self.utility.send_message(self.utility.TEST_CHANNEL, messageWithMetadata)
-                await message.add_reaction("👍")
+                if (clipId != None):
+                    clip = twitch.get_clips(clip_id = [clipId.group(1)])['data'][0]
+                    video = twitch.get_videos(ids=[clip['video_id']])['data'][0]
+                    createdDt = video['created_at'][:-1].split('T')
+                    createDate, createdTime = createdDt[0], createdDt[1]
+                    messageWithMetadata = "```[{}][{}][{}][{}][{}]```{}".format(clip['broadcaster_name'], clip['title'], video['title'], createDate, createdTime, message.clean_content)
+                else:
+                    videoId = re.search("twitch.tv/videos/(\w+)", message.clean_content)
+                    if (videoId != None):
+                        video = twitch.get_videos(ids=[videoId.group(1)])['data'][0]
+                        createdDt = video['created_at'][:-1].split('T')
+                        createDate, createdTime = createdDt[0], createdDt[1]
+                        messageWithMetadata = "```[{}][{}][{}]```{}".format(video['title'], createDate, createdTime, message.clean_content)
+                
+                if (messageWithMetadata != ""):
+                    await self.utility.send_message(self.utility.TEST_CHANNEL, messageWithMetadata)
+                    await message.add_reaction("👍")
 
         #await self.utility.send_message(self.utility.TEST_CHANNEL, "```{}```".format(payload.emoji.name))
 
