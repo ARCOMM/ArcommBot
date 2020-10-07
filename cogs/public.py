@@ -39,6 +39,14 @@ EXTRA_TIMEZONES = {
     "EDT": "ETC/GMT+4"
 }
 
+TICKET_SITES = {
+    "acre" : "https://github.com/IDI-Systems/acre2/issues/new/choose",
+    "ace"  : "https://github.com/acemod/ACE3/issues/new/choose",
+    "cup"  : "https://dev.cup-arma3.org/maniphest/task/edit/form/1/",
+    "cba"  : "https://github.com/CBATeam/CBA_A3/issues/new/choose",
+    "arma" : "https://feedback.bistudio.com/maniphest/task/edit/form/3/"
+}
+
 class ClipsDB():
     def __init__(self):
         self.conn = sqlite3.connect('resources/clips.db')
@@ -302,6 +310,18 @@ class Public(commands.Cog):
             else:
                 await self.utility.send_message(ctx.channel, "{} Error - Couldn't get <{}>".format(response.status, wikiUrl))
                 
+    @commands.command()
+    async def ticket (self, ctx, site):
+        """
+        Get a link to create a ticket
+        Options: acre, ace, arma, cba, cup
+        """
+        site = site.lower()
+        if site in TICKET_SITES:
+            await self.utility.send_message(ctx.channel, "Create a ticket here: <{}>".format(TICKET_SITES[site]))
+        else:
+            await self.utility.send_message(ctx.channel, "Invalid site (acre, ace, arma, cba, cup)")
+    
     @commands.command(aliases = ['utc'])
     async def zulu(self, ctx):
         '''Return Zulu (UTC) time'''
