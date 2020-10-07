@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import subprocess
+import sqlite3
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -38,13 +39,59 @@ EXTRA_TIMEZONES = {
     "EDT": "ETC/GMT+4"
 }
 
+class ClipsDB():
+    def __init__(self):
+        self.conn = sqlite3.connect('resources/clips.db')
+        #self.remake()
+
+    def remake(self):
+        c = self.conn.cursor()
+        try:
+            #c.execute("DROP TABLE clips")
+            c.execute("CREATE TABLE clips (link STRING PRIMARY KEY, broadcaster STRING NOT NULL, title STRING NOT NULL, video_id INTEGER, date TEXT NOT NULL, time TEXT NOT NULL, type STRING)")
+        except Exception as e:
+            print(e)
+
+    def storeClip(self, link, broadcaster, title, video_id, date, time, _type):
+        c = self.conn.cursor()
+
+        try:
+            c.execute("INSERT OR IGNORE INTO clips (link, broadcaster, title, video_id, date, time, type) VALUES(?, ?, ?, ?, ?, ?, ?)", (link, broadcaster, title, video_id, date, time, _type))
+        except Exception as e:
+            None
+
+        self.conn.commit()
+
+    def searchClips(self, searchQuery):
+        c = self.conn.cursor()
+        try:
+            c.execute("SELECT * FROM clips {}".format(searchQuery))
+            results = c.fetchall()
+        except Exception as e:
+            return e
+
+        return results
+
+
 class Public(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.clips = ClipsDB()
         self.utility = self.bot.get_cog("Utility")
         self.session = aiohttp.ClientSession()
 
     #===Commands===#
+
+    @commands.command()
+    async def clips(self, ctx, *args):
+        searchQuery = " ".join(args)
+        results = self.clips.searchClips(searchQuery)
+        resultString = ""
+        for result in results:
+            resultString += (str(result) + "\n")
+        results = "```{}```".format(results)
+
+        await self.utility.send_message(ctx.channel, str(results))
 
     @commands.command(aliases = ['daylightsavings'])
     async def dst(self, ctx):
@@ -322,18 +369,23 @@ class Public(commands.Cog):
                 messageWithMetadata = ""
 
                 if (clipId != None):
-                    clip = twitch.get_clips(clip_id = [clipId.group(1)])['data'][0]
+                    link = clipId.group(1)
+                    clip = twitch.get_clips(clip_id = [link])['data'][0]
                     video = twitch.get_videos(ids=[clip['video_id']])['data'][0]
                     createdDt = video['created_at'][:-1].split('T')
                     createDate, createdTime = createdDt[0], createdDt[1]
                     messageWithMetadata = "```[{}][{}][{}][{}][{}]```{}".format(clip['broadcaster_name'], clip['title'], video['title'], createDate, createdTime, message.clean_content)
+
+                    self.clips.storeClip(link, clip['broadcaster_name'], clip['title'], video['id'], createDate, createdTime, "Clip")
                 else:
                     videoId = re.search("twitch.tv/videos/(\w+)", message.clean_content)
                     if (videoId != None):
                         video = twitch.get_videos(ids=[videoId.group(1)])['data'][0]
                         createdDt = video['created_at'][:-1].split('T')
                         createDate, createdTime = createdDt[0], createdDt[1]
-                        messageWithMetadata = "```[{}][{}][{}]```{}".format(video['title'], createDate, createdTime, message.clean_content)
+                        messageWithMetadata = "```[{}][{}][{}][{}]```{}".format(video['user_name'], video['title'], createDate, createdTime, message.clean_content)
+
+                        self.clips.storeClip(video['id'], video['user_name'], video['title'], video['id'], createDate, createdTime, "Video")
                 
                 if (messageWithMetadata != ""):
                     await self.utility.send_message(self.utility.TEST_CHANNEL, messageWithMetadata)
