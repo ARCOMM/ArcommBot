@@ -1,16 +1,28 @@
+import configparser
 from datetime import datetime, timedelta
 import logging
 import os
 import re
 import subprocess
+import sqlite3
 
 import aiohttp
 from bs4 import BeautifulSoup
 import discord
 from discord.ext import commands
 from pytz import timezone, UnknownTimeZoneError
+from twitchAPI import Twitch
 
 logger = logging.getLogger('bot')
+
+config = configparser.ConfigParser()
+config.read('resources/config.ini')
+
+TWITCH_ID = os.getenv('TWITCH_ID')
+TWITCH_SECRET = os.getenv('TWITCH_SECRET')
+
+twitch = Twitch(TWITCH_ID, TWITCH_SECRET)
+twitch.authenticate_app([])
 
 EXTRA_TIMEZONES = {
     "PT" : "America/Los_Angeles",
@@ -27,13 +39,67 @@ EXTRA_TIMEZONES = {
     "EDT": "ETC/GMT+4"
 }
 
+TICKET_SITES = {
+    "acre" : "https://github.com/IDI-Systems/acre2/issues/new/choose",
+    "ace"  : "https://github.com/acemod/ACE3/issues/new/choose",
+    "cup"  : "https://dev.cup-arma3.org/maniphest/task/edit/form/1/",
+    "cba"  : "https://github.com/CBATeam/CBA_A3/issues/new/choose",
+    "arma" : "https://feedback.bistudio.com/maniphest/task/edit/form/3/"
+}
+
+class ClipsDB():
+    def __init__(self):
+        self.conn = sqlite3.connect('resources/clips.db')
+        #self.remake()
+
+    def remake(self):
+        c = self.conn.cursor()
+        try:
+            #c.execute("DROP TABLE clips")
+            c.execute("CREATE TABLE clips (link STRING PRIMARY KEY, broadcaster STRING NOT NULL, title STRING NOT NULL, video_id INTEGER, date TEXT NOT NULL, time TEXT NOT NULL, type STRING)")
+        except Exception as e:
+            print(e)
+
+    def storeClip(self, link, broadcaster, title, video_id, date, time, _type):
+        c = self.conn.cursor()
+
+        try:
+            c.execute("INSERT OR IGNORE INTO clips (link, broadcaster, title, video_id, date, time, type) VALUES(?, ?, ?, ?, ?, ?, ?)", (link, broadcaster, title, video_id, date, time, _type))
+        except Exception as e:
+            None
+
+        self.conn.commit()
+
+    def searchClips(self, searchQuery):
+        c = self.conn.cursor()
+        try:
+            c.execute("SELECT * FROM clips {}".format(searchQuery))
+            results = c.fetchall()
+        except Exception as e:
+            return e
+
+        return results
+
+
 class Public(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.clips = ClipsDB()
         self.utility = self.bot.get_cog("Utility")
         self.session = aiohttp.ClientSession()
 
     #===Commands===#
+
+    @commands.command()
+    async def clips(self, ctx, *args):
+        searchQuery = " ".join(args)
+        results = self.clips.searchClips(searchQuery)
+        resultString = ""
+        for result in results:
+            resultString += (str(result) + "\n")
+        results = "```{}```".format(results)
+
+        await self.utility.send_message(ctx.channel, str(results))
 
     @commands.command(aliases = ['daylightsavings'])
     async def dst(self, ctx):
@@ -244,6 +310,18 @@ class Public(commands.Cog):
             else:
                 await self.utility.send_message(ctx.channel, "{} Error - Couldn't get <{}>".format(response.status, wikiUrl))
                 
+    @commands.command()
+    async def ticket (self, ctx, site):
+        """
+        Get a link to create a ticket
+        Options: acre, ace, arma, cba, cup
+        """
+        site = site.lower()
+        if site in TICKET_SITES:
+            await self.utility.send_message(ctx.channel, "Create a ticket here: <{}>".format(TICKET_SITES[site]))
+        else:
+            await self.utility.send_message(ctx.channel, "Invalid site (acre, ace, arma, cba, cup)")
+    
     @commands.command(aliases = ['utc'])
     async def zulu(self, ctx):
         '''Return Zulu (UTC) time'''
@@ -285,11 +363,55 @@ class Public(commands.Cog):
 
         return dtString
 
+    def getEmojiCountFromReactionList(self, emoji, reactionList):
+        for reaction in reactionList:
+            if (emoji == reaction.emoji):
+                return reaction.count
+        return 0
+    
+    def getTwitchClipUrlFromMessage(self, message):
+        return 
+    
     #===Listeners===#
     
     @commands.Cog.listener()
     async def on_ready(self):
         self.utility = self.bot.get_cog("Utility")
+        await self.utility.send_message(self.utility.TEST_CHANNEL, "ArcommBot is fully loaded")
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        if (payload.emoji.name == "📹"): #:video_camera:
+            message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
+            
+            if (self.getEmojiCountFromReactionList("👍", message.reactions) == 0):
+                clipId = re.search("clips.twitch.tv/(\w+)", message.clean_content)
+                messageWithMetadata = ""
+
+                if (clipId != None):
+                    link = clipId.group(1)
+                    clip = twitch.get_clips(clip_id = [link])['data'][0]
+                    video = twitch.get_videos(ids=[clip['video_id']])['data'][0]
+                    createdDt = video['created_at'][:-1].split('T')
+                    createDate, createdTime = createdDt[0], createdDt[1]
+                    messageWithMetadata = "```[{}][{}][{}][{}][{}]```{}".format(clip['broadcaster_name'], clip['title'], video['title'], createDate, createdTime, message.clean_content)
+
+                    self.clips.storeClip(link, clip['broadcaster_name'], clip['title'], video['id'], createDate, createdTime, "Clip")
+                else:
+                    videoId = re.search("twitch.tv/videos/(\w+)", message.clean_content)
+                    if (videoId != None):
+                        video = twitch.get_videos(ids=[videoId.group(1)])['data'][0]
+                        createdDt = video['created_at'][:-1].split('T')
+                        createDate, createdTime = createdDt[0], createdDt[1]
+                        messageWithMetadata = "```[{}][{}][{}][{}]```{}".format(video['user_name'], video['title'], createDate, createdTime, message.clean_content)
+
+                        self.clips.storeClip(video['id'], video['user_name'], video['title'], video['id'], createDate, createdTime, "Video")
+                
+                if (messageWithMetadata != ""):
+                    await self.utility.send_message(self.utility.TEST_CHANNEL, messageWithMetadata)
+                    await message.add_reaction("👍")
+
+        #await self.utility.send_message(self.utility.TEST_CHANNEL, "```{}```".format(payload.emoji.name))
 
 def setup(bot):
     bot.add_cog(Public(bot))

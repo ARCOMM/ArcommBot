@@ -3,6 +3,7 @@ import os
 import re
 import string
 import sys
+import ArcommBot
 
 from discord import File
 from discord.ext import commands
@@ -48,8 +49,15 @@ class Dev(commands.Cog):
             logger.critical(e)
             await self.utility.send_message(ctx.channel, e)
 
+    @commands.command(name = "restart", hidden = True) 
+    @is_dev()
+    async def _restart(self, ctx) :
+        print("============ RESTARTING ============")
+        logger.critical("============ RESTARTING ============")
+        ArcommBot.restart()
+
     @commands.command(name = "shutdown", hidden = True)
-    @commands.is_owner()
+    @is_dev()
     async def _shutdown(self, ctx):
         exit()
 
@@ -75,10 +83,18 @@ class Dev(commands.Cog):
 
                 logger.info("{} successfully updated".format(newCog.filename))
                 await self.utility.send_message(ctx.channel, "{} successfully updated".format(newCog.filename))
+
+                return newCog.filename.split(".")[0]
             else:
                 logger.debug("Filename not in cogs")
         else:
             logger.debug("Found no attachment")
+
+    @commands.command(name = "upload", hidden = True)
+    @is_dev()
+    async def _upload(self, ctx):
+        filename = await self._update(ctx)
+        await self._reload(ctx, filename)
 
     #===Listeners===#
 
