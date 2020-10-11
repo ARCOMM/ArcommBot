@@ -34,15 +34,15 @@ class ClipsDB():
         c = self.conn.cursor()
         try:
             #c.execute("DROP TABLE clips")
-            c.execute("CREATE TABLE clips (link STRING PRIMARY KEY, broadcaster STRING NOT NULL, title STRING NOT NULL, view_count INTEGER, duration REAL, video_id INTEGER, date TEXT NOT NULL, time TEXT NOT NULL, type STRING)")
+            c.execute("CREATE TABLE clips (link STRING PRIMARY KEY, source STRING NOT NULL, broadcaster STRING NOT NULL, title STRING NOT NULL, view_count INTEGER, duration REAL, video_id INTEGER, date TEXT NOT NULL, time TEXT NOT NULL, type STRING)")
         except Exception as e:
             print(e)
 
-    def storeClip(self, link, broadcaster, title, view_count, duration, video_id, date, time, _type):
+    def storeClip(self, link, source, broadcaster, title, view_count, duration, video_id, date, time, _type):
         c = self.conn.cursor()
 
         try:
-            c.execute("INSERT OR IGNORE INTO clips (link, broadcaster, title, view_count, duration, video_id, date, time, type) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", (link, broadcaster, title, view_count, duration, video_id, date, time, _type))
+            c.execute("INSERT OR IGNORE INTO clips (link, source, broadcaster, title, view_count, duration, video_id, date, time, type) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (link, source, broadcaster, title, view_count, duration, video_id, date, time, _type))
         except Exception as e:
             print(e)
 
@@ -121,6 +121,7 @@ class Clips(commands.Cog):
         succ = 0
         err = 0
         miss = 0
+
         async for message in self.utility.FOOTAGE_CHANNEL.history(limit=None):
             counter += 1
             if counter % 1000 == 0:
@@ -135,9 +136,8 @@ class Clips(commands.Cog):
                         createdDt = clip['created_at'][:-1].split('T')
                         createDate, createdTime = createdDt[0], createdDt[1]
 
-                        self.clips.storeClip(link, clip['broadcaster_name'], clip['title'], clip['view_count'], None, videoId, createDate, createdTime, "Clip")
+                        self.clips.storeClip(link, "Twitch", clip['broadcaster_name'], clip['title'], clip['view_count'], None, videoId, createDate, createdTime, "Clip")
                         succ += 1
-                        #await asyncio.sleep(0.3)
                     else:
                         miss += 1
                 else:
@@ -148,9 +148,8 @@ class Clips(commands.Cog):
                             createDate, createdTime = createdDt[0], createdDt[1]
 
                             videoType = "Clip" if (str(video['type']) == "VideoType.HIGHLIGHT") else "Video"
-                            self.clips.storeClip(video['id'], video['user_name'], video['title'], video['view_count'], video['duration'], video['id'], createDate, createdTime, videoType)
+                            self.clips.storeClip(video['id'], "Twitch", video['user_name'], video['title'], video['view_count'], video['duration'], video['id'], createDate, createdTime, videoType)
                             succ += 1
-                            #await asyncio.sleep(0.3)
                         else:
                             miss += 1
 
@@ -233,16 +232,16 @@ class Clips(commands.Cog):
                             createdDt = clip['created_at'][:-1].split('T')
                             createDate, createdTime = createdDt[0], createdDt[1]
 
-                            self.clips.storeClip(link, clip['broadcaster_name'], clip['title'], clip['view_count'], None, videoId, createDate, createdTime, "Clip")
+                            self.clips.storeClip(link, "Twitch", clip['broadcaster_name'], clip['title'], clip['view_count'], None, videoId, createDate, createdTime, "Clip")
                             await message.add_reaction("👍")
                     else:
-                        video, id = self.getVideoAndIdFromString(message.clean_content)
+                        video, videoId = self.getVideoAndIdFromString(message.clean_content)
                         if (video != None):
                             createdDt = video['created_at'][:-1].split('T')
                             createDate, createdTime = createdDt[0], createdDt[1]
 
                             videoType = "Clip" if (video['type'] == "highlight") else "Video"
-                            self.clips.storeClip(video['id'], video['user_name'], video['title'], video['view_count'], video['duration'], video['id'], createDate, createdTime, videoType)
+                            self.clips.storeClip(video['id'], "Twitch", video['user_name'], video['title'], video['view_count'], video['duration'], video['id'], createDate, createdTime, videoType)
                             await message.add_reaction("👍")
 
                 except Exception as e:
