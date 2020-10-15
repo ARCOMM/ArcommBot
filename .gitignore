@@ -129,3 +129,6 @@ resources/last_modified.json
 *.json
 logs/
 resources/calendar.db
+resources/clip_results.txt
+resources/recruit_post.md
+clips.db
