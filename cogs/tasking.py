@@ -164,9 +164,12 @@ class Tasking(commands.Cog):
             steamChanged, steamPost = await self.handleSteam()
 
             if githubChanged or cupChanged or steamChanged:
-                channel = self.utility.STAFF_CHANNEL
-                role = self.utility.ADMIN_ROLE_ID
-                await self.utility.send_message(channel, "<@&{}>\n{}{}{}".format(role, githubPost, cupPost, steamPost))
+                await self.utility.send_message(self.utility.STAFF_CHANNEL, "<@&{}>\n{}{}{}".format(self.utility.ADMIN_ROLE_ID, githubPost, cupPost, steamPost))
+
+            a3syncChanged, a3syncPost = await self.handleA3Sync()
+            if a3syncChanged:
+                await self.utility.send_message(self.utility.TEST_CHANNEL, a3syncPost)
+
         except Exception as e:
             logger.error(traceback.format_exc())
     
@@ -272,6 +275,58 @@ class Tasking(commands.Cog):
         
         await channel.send(introString, file = File("resources/recruit_post.md", filename = "recruit_post.md"))
     
+    async def handleA3Sync(self):
+        logger.debug("handleA3Sync called")
+
+        lastModified = {}
+        with open('resources/last_modified.json', 'r') as f:
+            lastModified = json.load(f)
+
+        repoChanged = False
+        updatePost = ""
+        deleted, added, updated = [modName for modName in lastModified['a3sync']], [], []
+
+        async with self.session.get('http://108.61.34.58/main/') as response:
+            if response.status == 200:
+                logger.debug("Response 200 - Success")
+                soup = BeautifulSoup(await response.text(), features = "lxml")
+
+                for row in soup.find_all('a', href=True)[2:]:
+                    modName = row.text[1:]
+                    matches = re.findall(r'(\S+)', row.previous_element[:-6].strip())
+                    updateString = "{} {} {}".format(matches[0], matches[1], matches[2])
+                    updateDatetime = str(datetime.strptime(updateString, "%m/%d/%Y %I:%M %p"))
+
+                    if modName in lastModified['a3sync']:
+                        deleted.remove(modName)
+
+                        if updateDatetime != lastModified['a3sync'][modName]:
+                            repoChanged = True
+                            lastModified['a3sync'][modName] = updateDatetime
+
+                            updated.append(modName)
+                    else:
+                        repoChanged = True
+                        lastModified['a3sync'][modName] = updateDatetime
+
+                        added.append(modName)
+            else:
+                logger.debug("REPO GET error: {} {} - {}".format(response.status, response.reason, await response.text()))
+        
+        for mod in deleted:
+            del lastModified['a3sync'][mod]
+
+        with open('resources/last_modified.json', 'w') as f:
+            json.dump(lastModified, f)
+
+        updatePost = "```ini\n[ The ArmA3Sync repo has changed ]\n\n===Updated===\n{}\n\n===Added===\n{}\n\n===Removed==={}\n```".format(
+            "\n".join(updated),
+            "\n".join(added),
+            "\n".join(deleted)
+        )
+        
+        return repoChanged, updatePost
+
     async def handleGithub(self):
         logger.debug("handleGithub called")
 
