@@ -7,6 +7,7 @@ import os
 import re
 import sqlite3
 import traceback
+from urllib.parse import urlparse
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -15,6 +16,8 @@ from discord.ext import commands, tasks
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from pytz import timezone
+
+from a3s_to_json import repository
 
 logger = logging.getLogger('bot')
 
@@ -312,18 +315,25 @@ class Tasking(commands.Cog):
                         added.append(modName)
             else:
                 logger.debug("REPO GET error: {} {} - {}".format(response.status, response.reason, await response.text()))
-        
+
+        newRepoSize = self.getA3SyncRepoSize()
+        repoSizeChange = newRepoSize - int(lastModified['a3sync_size'])
+        repoChangeString = str(repoSizeChange) if (repoSizeChange < 0) else "+{}".format(repoSizeChange)
+
+        updatePost = "```ini\n[ The ArmA3Sync repo has changed ]\n\n{} GB ({} GB)\n\n===Updated===\n{}\n\n===Added===\n{}\n\n===Removed==={}\n```".format(
+            str(newRepoSize),
+            repoChangeString,
+            "\n".join(updated),
+            "\n".join(added),
+            "\n".join(deleted)
+        )
+
+        lastModified['a3sync_size'] = newRepoSize
         for mod in deleted:
             del lastModified['a3sync'][mod]
 
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
-
-        updatePost = "```ini\n[ The ArmA3Sync repo has changed ]\n\n===Updated===\n{}\n\n===Added===\n{}\n\n===Removed==={}\n```".format(
-            "\n".join(updated),
-            "\n".join(added),
-            "\n".join(deleted)
-        )
         
         return repoChanged, updatePost
 
@@ -469,6 +479,16 @@ class Tasking(commands.Cog):
 
         return ""
 
+    def getA3SyncRepoSize(self):
+        url = "http://108.61.34.58/main/.a3s/"
+        parsed_url = urlparse(url)
+        scheme = parsed_url.scheme.capitalize
+
+        x = repository.parse(url, scheme, parseAutoconf=False, parseServerinfo=True, parseEvents=False,
+                            parseChangelog=False, parseSync=False)
+
+        return round((int(x["serverinfo"]["SERVER_INFO"]["totalFilesSize"]) / 1000000000), 2) # Bytes to GB
+    
     #===Listeners===#
 
     def cog_unload(self):

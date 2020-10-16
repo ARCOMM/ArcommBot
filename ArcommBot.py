@@ -34,6 +34,7 @@ def loadExtensions():
             bot.load_extension("cogs." + extension)
             logger.info("=========Loaded {} extension=========".format(extension))
         except Exception as e:
+            print(e)
             logger.critical("Failed to load {} extension\n".format(extension))
             logger.critical(e)   
 
