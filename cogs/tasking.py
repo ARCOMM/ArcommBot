@@ -171,7 +171,7 @@ class Tasking(commands.Cog):
 
             a3syncChanged, a3syncPost = await self.handleA3Sync()
             if a3syncChanged:
-                await self.utility.send_message(self.utility.TEST_CHANNEL, a3syncPost)
+                await self.utility.send_message(self.utility.ANNOUNCE_CHANNEL, a3syncPost)
 
         except Exception as e:
             logger.error(traceback.format_exc())
