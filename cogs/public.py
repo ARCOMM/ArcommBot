@@ -31,11 +31,15 @@ EXTRA_TIMEZONES = {
 }
 
 TICKET_SITES = {
-    "acre" : "https://github.com/IDI-Systems/acre2/issues/new/choose",
-    "ace"  : "https://github.com/acemod/ACE3/issues/new/choose",
-    "cup"  : "https://dev.cup-arma3.org/maniphest/task/edit/form/1/",
-    "cba"  : "https://github.com/CBATeam/CBA_A3/issues/new/choose",
-    "arma" : "https://feedback.bistudio.com/maniphest/task/edit/form/3/"
+    "acre"      : "https://github.com/IDI-Systems/acre2/issues/new/choose",
+    "ace"       : "https://github.com/acemod/ACE3/issues/new/choose",
+    "cup"       : "https://dev.cup-arma3.org/maniphest/task/edit/form/1/",
+    "cba"       : "https://github.com/CBATeam/CBA_A3/issues/new/choose",
+    "arma"      : "https://feedback.bistudio.com/maniphest/task/edit/form/3/",
+    "arc_misc"  : "https://github.com/ARCOMM/arc_misc/issues/new",
+    "archub"    : "https://github.com/ARCOMM/ARCHUB/issues/new",
+    "tmf"       : "https://github.com/TMF3/TMF/issues/new",
+    "noticket"  : "https://images-ext-2.discordapp.net/external/0k17Gmg6zclrozIKLkwCWBqVYYmTI8EbpyDTRK_e7Yc/https/i.imgur.com/WiKXhy9.mp4"
 }
 
 class Public(commands.Cog):
