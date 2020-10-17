@@ -11,7 +11,7 @@ load_dotenv()
 bot = commands.Bot(command_prefix = '.', case_insensitive = True)
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-startup_extensions = ["utility", "dev", "tasking", "staff", "public"]
+startup_extensions = ["utility", "dev", "tasking", "staff", "public", "clips"]
 
 def setupLogging():
     logger = logging.getLogger('discord')
@@ -34,6 +34,7 @@ def loadExtensions():
             bot.load_extension("cogs." + extension)
             logger.info("=========Loaded {} extension=========".format(extension))
         except Exception as e:
+            print(e)
             logger.critical("Failed to load {} extension\n".format(extension))
             logger.critical(e)   
 

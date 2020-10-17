@@ -7,3 +7,4 @@ python-dotenv==0.13.0
 lxml==4.5.0
 pytz==2020.1
 twitchAPI==1.3
+imgur-python==0.2.1

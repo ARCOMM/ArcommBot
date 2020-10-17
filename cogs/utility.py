@@ -96,6 +96,8 @@ class Utility(commands.Cog):
         logger.info("===Bot connected/reconnected===")
 
         self.ADMIN_CHANNEL = self.bot.get_channel(int(config['discord']['admin_channel']))
+        self.ANNOUNCE_CHANNEL = self.bot.get_channel(int(config['discord']['announce_channel']))
+        self.FOOTAGE_CHANNEL = self.bot.get_channel(int(config['discord']['footage_channel']))
         self.OP_NEWS_CHANNEL = self.bot.get_channel(int(config['discord']['op_news_channel']))
         self.STAFF_CHANNEL = self.bot.get_channel(int(config['discord']['staff_channel']))
         self.TEST_CHANNEL = self.bot.get_channel(int(config['discord']['test_channel']))
