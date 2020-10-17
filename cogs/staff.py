@@ -28,6 +28,37 @@ class Staff(commands.Cog):
             await member.guild.create_role(name = roleQuery, reason = "Added role through .addrole", mentionable = True)
             await self.utility.send_message(ctx.channel, "{} Added role **{}**".format(member.mention, roleQuery))
 
+    @commands.command()
+    @commands.has_role("Staff")
+    async def config(self, ctx):
+        attachments = ctx.message.attachments
+
+        if attachments == []:
+            await ctx.channel.send("config.ini", file = File("resources/config.ini", filename = "config.ini"))
+        else:
+            logger.debug("Found attachment")
+            newConfig = attachments[0]
+            if newConfig.filename == "config.ini":
+                logger.debug("Attachment '{}' has correct name".format(newConfig.filename))
+                try:
+                    os.remove("resources/config.bak")
+                    logger.debug("Removed config.bak")
+                except FileNotFoundError as e:
+                    logger.debug("No config.bak exists, can't remove")
+
+                try:
+                    os.rename("resources/config.ini", "resources/config.bak")
+                    logger.info("Saved recruit_post.md to recruit_post.bak")
+                except FileNotFoundError as e:
+                    logger.debug("No config.ini exists, can't backup")
+
+                await newConfig.save("resources/config.ini")
+                logger.info("Saved new config.ini")
+                await self.utility.send_message(ctx.channel, "{} {}".format(ctx.author.mention, "Config has been updated"))
+            else:
+                logger.debug("Attachment '{}' has incorrect name".format(newConfig.filename))
+                await self.utility.send_message(ctx.channel, "{} {}".format(ctx.author.mention, "File must be called config.ini"))
+    
     @commands.command(aliases = ["removerank", "deleterank", "deleterole"])
     @commands.has_role("Staff")
     async def removerole(self, ctx, *args):
