@@ -326,7 +326,7 @@ class Tasking(commands.Cog):
         repoSizeChange = round(newRepoSize - float(lastModified['a3sync_size']), 2)
         repoChangeString = str(repoSizeChange) if (repoSizeChange < 0) else "+{}".format(repoSizeChange)
 
-        updatePost = "```md\n# The ArmA3Sync repo has changed #\n\n[{} GB]({} GB)\n\n< Updated >\n{}\n\n< Added >\n{}\n\n< Removed >{}\n```".format(
+        updatePost = "```md\n# The ArmA3Sync repo has changed #\n\n[{} GB]({} GB)\n\n< Updated >\n{}\n\n< Added >\n{}\n\n< Removed >\n{}```".format(
             str(newRepoSize),
             repoChangeString,
             "\n".join(updated),
