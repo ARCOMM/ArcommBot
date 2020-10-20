@@ -169,6 +169,12 @@ class Tasking(commands.Cog):
             if githubChanged or cupChanged or steamChanged:
                 await self.utility.send_message(self.utility.STAFF_CHANNEL, "<@&{}>\n{}{}{}".format(self.utility.ADMIN_ROLE_ID, githubPost, cupPost, steamPost))
 
+        except Exception as e:
+            logger.error(traceback.format_exc())
+    
+    @tasks.loop(minutes = 10)
+    async def a3syncTask(self):
+        try:
             a3syncChanged, a3syncPost = await self.handleA3Sync()
             if a3syncChanged:
                 await self.utility.send_message(self.utility.ANNOUNCE_CHANNEL, a3syncPost)
@@ -317,10 +323,10 @@ class Tasking(commands.Cog):
                 logger.debug("REPO GET error: {} {} - {}".format(response.status, response.reason, await response.text()))
 
         newRepoSize = self.getA3SyncRepoSize()
-        repoSizeChange = newRepoSize - int(lastModified['a3sync_size'])
+        repoSizeChange = round(newRepoSize - float(lastModified['a3sync_size']), 2)
         repoChangeString = str(repoSizeChange) if (repoSizeChange < 0) else "+{}".format(repoSizeChange)
 
-        updatePost = "```ini\n[ The ArmA3Sync repo has changed ]\n\n{} GB ({} GB)\n\n===Updated===\n{}\n\n===Added===\n{}\n\n===Removed==={}\n```".format(
+        updatePost = "```md\n# The ArmA3Sync repo has changed #\n\n[{} GB]({} GB)\n\n< Updated >\n{}\n\n< Added >\n{}\n\n< Removed >\n{}```".format(
             str(newRepoSize),
             repoChangeString,
             "\n".join(updated),
@@ -498,6 +504,7 @@ class Tasking(commands.Cog):
         self.modcheckTask.cancel()
         self.recruitTask.cancel()
         self.presenceTask.cancel()
+        self.a3syncTask.cancel()
         logger.warning("Tasks cancelled at {}".format(datetime.now()))
 
     @commands.Cog.listener()
@@ -512,6 +519,7 @@ class Tasking(commands.Cog):
         self.modcheckTask.start()
         self.recruitTask.start()
         self.presenceTask.start()
+        self.a3syncTask.start()
 
 def setup(bot):
     bot.add_cog(Tasking(bot))

@@ -38,8 +38,7 @@ TICKET_SITES = {
     "arma"      : "https://feedback.bistudio.com/maniphest/task/edit/form/3/",
     "arc_misc"  : "https://github.com/ARCOMM/arc_misc/issues/new",
     "archub"    : "https://github.com/ARCOMM/ARCHUB/issues/new",
-    "tmf"       : "https://github.com/TMF3/TMF/issues/new",
-    "noticket"  : "https://images-ext-2.discordapp.net/external/0k17Gmg6zclrozIKLkwCWBqVYYmTI8EbpyDTRK_e7Yc/https/i.imgur.com/WiKXhy9.mp4"
+    "tmf"       : "https://github.com/TMF3/TMF/issues/new"
 }
 
 class Public(commands.Cog):
