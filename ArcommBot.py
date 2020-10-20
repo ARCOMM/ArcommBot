@@ -4,11 +4,16 @@ import logging
 import logging.handlers
 import sys
 
+import discord
 from discord.ext import commands
 
 load_dotenv()
 
-bot = commands.Bot(command_prefix = '.', case_insensitive = True)
+
+intents = discord.Intents.default()
+intents.members = True
+
+bot = commands.Bot(command_prefix = '.', case_insensitive = True, intents = intents)
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 startup_extensions = ["utility", "dev", "tasking", "staff", "public", "clips"]
@@ -49,4 +54,4 @@ if __name__ == "__main__":
         bot.loop.run_until_complete(bot.start(TOKEN))
         
         print("Reconnecting")
-        bot.client = commands.Bot(command_prefix = '.', case_insensitive = True, loop = bot.loop)
+        bot.client = commands.Bot(command_prefix = '.', case_insensitive = True, intents = intents, loop = bot.loop)
