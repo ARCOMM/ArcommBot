@@ -252,6 +252,8 @@ class Tasking(commands.Cog):
             ping = "<@&{}>".format(self.utility.RECRUIT_ROLE_ID)
         elif re.search("training", summary.lower()) != None:
             ping = "<@&{}>".format(self.utility.TRAINING_ROLE_ID)
+        elif re.search("tactical", summary.lower()) != None:
+            ping = "<@&{}>".format(self.utility.TDG_ROLE_ID)
         else:
             ping = "@here"
 

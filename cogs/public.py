@@ -262,7 +262,7 @@ class Public(commands.Cog):
     async def ticket (self, ctx, site):
         """
         Get a link to create a ticket
-        Options: acre, ace, arma, cba, cup
+        Options: acre, ace, arma, cba, cup, archub, arc_misc, tmf
         """
         site = site.lower()
         if site in TICKET_SITES:

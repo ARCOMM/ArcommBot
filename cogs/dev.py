@@ -49,6 +49,22 @@ class Dev(commands.Cog):
             logger.critical(e)
             await self.utility.send_message(ctx.channel, e)
     
+    @commands.command(name = "resources", hidden = True)
+    @is_dev()
+    async def _resources(self, ctx):
+        outString = "```\n{}```".format("\n".join(os.listdir("resources/")))
+        await self.utility.send_message(self.utility.TEST_CHANNEL, outString)
+
+    @commands.command(name = "getres", hidden = True)
+    @is_dev()
+    async def _getres(self, ctx, resource):
+        await self.utility.getResource(ctx, resource)
+
+    @commands.command(name = "setres", hidden = True)
+    @is_dev()
+    async def _setres(self, ctx):
+        await self.utility.setResource(ctx)
+            
     @commands.command(name = "reload", hidden = True)
     @is_dev()
     async def _reload(self, ctx, ext: str):
@@ -126,20 +142,23 @@ class Dev(commands.Cog):
             if not (re.match(puncPattern, ctx.message.content)):
                 logger.debug("Command [{}] not found".format(ctx.message.content))
                 await self.utility.send_message(ctx.channel, "Command **{}** not found, use .help for a list".format(ctx.message.content))
-                return
-        
+            return
+
         if not ctx.command: return
         command = ctx.command.name
 
-        if (command == "optime") and (str(error) == "Command raised an exception: ValueError: hour must be in 0..23"):
+        if errorType == commands.errors.MissingRequiredArgument:
+            if command == "logs":
+                await ctx.channel.send("Bot log", file = File("logs/bot.log", filename = "bot.log"))
+            else:
+                await self.utility.send_message(ctx.channel, error)
+
+        elif (command == "optime") and (str(error) == "Command raised an exception: ValueError: hour must be in 0..23"):
             logger.debug("Optime modifier is too large")
             await self.utility.send_message(ctx.channel, "Optime modifier is too large")
         else:
             logger.warning(error)
-            await self.utility.send_message(ctx.channel, error)
-
-            botLog = File("logs/bot.log", filename = "bot.log")
-            await ctx.channel.send("Bot log", file = File("logs/bot.log", filename = "bot.log"))
+            await self.utility.send_message(ctx.channel, error)   
 
     @commands.Cog.listener()
     async def on_error(self, event):

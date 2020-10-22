@@ -134,3 +134,4 @@ resources/recruit_post.md
 clips.db
 a3s_to_json/
 *.bak
+resources/last_modified.json
