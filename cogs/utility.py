@@ -103,6 +103,7 @@ class Utility(commands.Cog):
         self.TEST_CHANNEL = self.bot.get_channel(int(config['discord']['test_channel']))
         self.ADMIN_ROLE_ID = int(config['discord']['admin_role'])
         self.RECRUIT_ROLE_ID = int(config['discord']['recruit_role'])
+        self.TDG_ROLE_ID = int(config['discord']['tdg_role'])
         self.TRAINING_ROLE_ID = int(config['discord']['training_role']) 
 
 def setup(bot):
