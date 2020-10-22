@@ -31,34 +31,35 @@ class Staff(commands.Cog):
     @commands.command()
     @commands.has_role("Staff")
     async def config(self, ctx):
-        attachments = ctx.message.attachments
+        """Return or overwrite the config file
+        
+        Usage:
+            .config 
+            -- Get current config
+            .config <<with attached file called config.ini>>
+            -- Overwrites config, a backup is saved"""
 
-        if attachments == []:
-            await ctx.channel.send("config.ini", file = File("resources/config.ini", filename = "config.ini"))
-        else:
-            logger.debug("Found attachment")
-            newConfig = attachments[0]
-            if newConfig.filename == "config.ini":
-                logger.debug("Attachment '{}' has correct name".format(newConfig.filename))
-                try:
-                    os.remove("resources/config.bak")
-                    logger.debug("Removed config.bak")
-                except FileNotFoundError as e:
-                    logger.debug("No config.bak exists, can't remove")
-
-                try:
-                    os.rename("resources/config.ini", "resources/config.bak")
-                    logger.info("Saved recruit_post.md to recruit_post.bak")
-                except FileNotFoundError as e:
-                    logger.debug("No config.ini exists, can't backup")
-
-                await newConfig.save("resources/config.ini")
-                logger.info("Saved new config.ini")
-                await self.utility.send_message(ctx.channel, "{} {}".format(ctx.author.mention, "Config has been updated"))
-            else:
-                logger.debug("Attachment '{}' has incorrect name".format(newConfig.filename))
-                await self.utility.send_message(ctx.channel, "{} {}".format(ctx.author.mention, "File must be called config.ini"))
+        if ctx.message.attachments == []:
+            await self.utility.getResource(ctx, "config.ini")
+        elif ctx.message.attachments[0].filename == "config.ini":
+            await self.utility.setResource(ctx)
     
+    @commands.command()
+    @commands.has_role("Staff")
+    async def recruitpost(self, ctx):
+        """Return or overwrite the recruitment post
+        
+        Usage:
+            .recruitpost   
+            -- Get current recruit post
+            .recruitpost <<with attached file called recruit_post.md>>
+            -- Overwrites recruitpost, a backup is saved"""
+
+        if ctx.message.attachments == []:
+            await self.utility.getResource(ctx, "recruit_post.md")
+        elif ctx.message.attachments[0].filename == "recruit_post.md":
+            await self.utility.setResource(ctx)
+   
     @commands.command(aliases = ["removerank", "deleterank", "deleterole"])
     @commands.has_role("Staff")
     async def removerole(self, ctx, *args):
@@ -97,47 +98,7 @@ class Staff(commands.Cog):
                 await self.utility.send_message(ctx.channel, "{} Role **{}** is reserved".format(member.mention, oldName))
         else:
             await self.utility.send_message(ctx.channel, "{} Role **{}** doesn't exist".format(member.mention, oldName))
-    
-    @commands.command()
-    @commands.has_role("Staff")
-    async def recruitpost(self, ctx):
-        """Return or overwrite the recruitment post
-        
-        Usage:
-            .recruitpost   
-            -- Output contents of resources/recruit_post.md
-            .recruitpost <<with attached file called recruit_post.md>>
-            -- Overwrites resources/recruit_post.md, a backup is saved as resources/recruit_post.bak"""
-
-        attachments = ctx.message.attachments
-
-        if attachments == []:
-            introString = "Post recruitment on <https://www.reddit.com/r/FindAUnit>"
-            await ctx.channel.send(introString, file = File("resources/recruit_post.md", filename = "recruit_post.md"))
-        else:
-            logger.debug("Found attachment")
-            newRecruitPost = attachments[0]
-            if newRecruitPost.filename == "recruit_post.md":
-                logger.debug("Attachment '{}' has correct name".format(newRecruitPost.filename))
-                try:
-                    os.remove("resources/recruit_post.bak")
-                    logger.debug("Removed recruit_post.bak")
-                except FileNotFoundError as e:
-                    logger.debug("No recruit_post.bak exists, can't remove")
-
-                try:
-                    os.rename("resources/recruit_post.md", "resources/recruit_post.bak")
-                    logger.info("Saved recruit_post.md to recruit_post.bak")
-                except FileNotFoundError as e:
-                    logger.debug("No recruit_post.md exists, can't backup")
-
-                await newRecruitPost.save("resources/recruit_post.md")
-                logger.info("Saved new recruit_post.md")
-                await self.utility.send_message(ctx.channel, "{} {}".format(ctx.author.mention, "Recruitment post has been updated"))
-            else:
-                logger.debug("Attachment '{}' has incorrect name".format(newRecruitPost.filename))
-                await self.utility.send_message(ctx.channel, "{} {}".format(ctx.author.mention, "File must be called recruit_post.md"))
-      
+         
     #===Listeners===#
 
     @commands.Cog.listener()

@@ -49,6 +49,22 @@ class Dev(commands.Cog):
             logger.critical(e)
             await self.utility.send_message(ctx.channel, e)
     
+    @commands.command(name = "resources", hidden = True)
+    @is_dev()
+    async def _resources(self, ctx):
+        outString = "```\n{}```".format("\n".join(os.listdir("resources/")))
+        await self.utility.send_message(self.utility.TEST_CHANNEL, outString)
+
+    @commands.command(name = "getres", hidden = True)
+    @is_dev()
+    async def _getres(self, ctx, resource):
+        await self.utility.getResource(ctx, resource)
+
+    @commands.command(name = "setres", hidden = True)
+    @is_dev()
+    async def _setres(self, ctx):
+        await self.utility.setResource(ctx)
+            
     @commands.command(name = "reload", hidden = True)
     @is_dev()
     async def _reload(self, ctx, ext: str):

@@ -1,7 +1,9 @@
 import configparser
 import logging
+import os
 import re
 
+from discord import File
 from discord.ext import commands
 from datetime import datetime, timedelta
 from pytz import timezone
@@ -89,6 +91,38 @@ class Utility(commands.Cog):
                 opday = opday.replace(day = opday.day + 1)
 
         return opday - today
+    
+    async def getResource(self, ctx, resource):
+        if resource in os.listdir("resources/"):
+            await ctx.channel.send(resource, file = File("resources/{}".format(resource), filename = resource))
+        else:
+            await self.send_message(ctx.channel, "{} not in resources".format(resource))
+
+    async def setResource(self, ctx):
+        attachments = ctx.message.attachments
+
+        if attachments == []:
+            await self.utility.send_message(ctx.channel, "No attachment found")
+        else:
+            newResource = attachments[0]
+            resourceName = newResource.filename
+            if resourceName in os.listdir("resources/"):
+                try:
+                    os.remove("resources/backups/{}.bak".format(resourceName))
+                    logger.debug("Removed {}.bak".format(resourceName))
+                except FileNotFoundError as e:
+                    logger.debug("No {}.bak exists, can't remove".format(resourceName))
+
+                try:
+                    os.rename("resources/{}".format(resourceName), "resources/backups/{}.bak".format(resourceName))
+                    logger.info("Saved {} to {}.bak".format(resourceName, resourceName))
+                except FileNotFoundError as e:
+                    logger.debug("No {} exists, can't backup".format(resourceName))
+
+                await newResource.save("resources/{}".format(resourceName))
+                await self.utility.send_message(ctx.channel, "{} {} has been updated".format(ctx.author.mention, resourceName))
+            else:
+                await self.utility.send_message(ctx.channel, "{} {} not in resources".format(ctx.author.mention, resourceName))
     
     @commands.Cog.listener()
     async def on_ready(self):
