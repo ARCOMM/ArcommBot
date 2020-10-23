@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 import logging
 import logging.handlers
+import subprocess
 import sys
 
 import discord
@@ -44,7 +45,7 @@ def loadExtensions():
             logger.critical(e)   
 
 def restart():
-    os.execv(sys.executable, [sys.executable, __file__] + sys.argv)
+    subprocess.call(["python", os.path.join(sys.path[0], __file__)] + sys.argv[1:])
 
 if __name__ == "__main__":
     setupLogging()
