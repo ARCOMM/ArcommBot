@@ -124,46 +124,7 @@ class Dev(commands.Cog):
         filename = await self._update(ctx)
         await self._reload(ctx, filename)
 
-    #===Listeners===#
-
-    @commands.Cog.listener()
-    async def on_command(self, ctx):
-        command = ctx.message.content
-        author = ctx.message.author
-        cogName = ctx.cog.qualified_name if ctx.cog != None else None
-        logger.info("[{}] command [{}] called by [{}]".format(cogName, command, author))
-
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
-        errorType = type(error)
-
-        if errorType == commands.errors.CommandNotFound:
-            puncPattern = ".[{}]+".format(re.escape(string.punctuation))
-            if not (re.match(puncPattern, ctx.message.content)):
-                logger.debug("Command [{}] not found".format(ctx.message.content))
-                await self.utility.send_message(ctx.channel, "Command **{}** not found, use .help for a list".format(ctx.message.content))
-            return
-
-        if not ctx.command: return
-        command = ctx.command.name
-
-        if errorType == commands.errors.MissingRequiredArgument:
-            if command == "logs":
-                await ctx.channel.send("Bot log", file = File("logs/bot.log", filename = "bot.log"))
-            else:
-                await self.utility.send_message(ctx.channel, error)
-
-        elif (command == "optime") and (str(error) == "Command raised an exception: ValueError: hour must be in 0..23"):
-            logger.debug("Optime modifier is too large")
-            await self.utility.send_message(ctx.channel, "Optime modifier is too large")
-        else:
-            logger.warning(error)
-            await self.utility.send_message(ctx.channel, error)   
-
-    @commands.Cog.listener()
-    async def on_error(self, event):
-        exc = sys.exc_info()
-        logger.warning("Type [{}], Value [{}]\nTraceback[{}]".format(exc[0], exc[1], exc[2]))
+    #===Listeners===# 
     
     @commands.Cog.listener()
     async def on_ready(self):

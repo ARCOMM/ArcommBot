@@ -102,7 +102,7 @@ class Utility(commands.Cog):
         attachments = ctx.message.attachments
 
         if attachments == []:
-            await self.utility.send_message(ctx.channel, "No attachment found")
+            await self.send_message(ctx.channel, "No attachment found")
         else:
             newResource = attachments[0]
             resourceName = newResource.filename
@@ -120,10 +120,52 @@ class Utility(commands.Cog):
                     logger.debug("No {} exists, can't backup".format(resourceName))
 
                 await newResource.save("resources/{}".format(resourceName))
-                await self.utility.send_message(ctx.channel, "{} {} has been updated".format(ctx.author.mention, resourceName))
+                await self.send_message(ctx.channel, "{} {} has been updated".format(ctx.author.mention, resourceName))
             else:
-                await self.utility.send_message(ctx.channel, "{} {} not in resources".format(ctx.author.mention, resourceName))
+                await self.send_message(ctx.channel, "{} {} not in resources".format(ctx.author.mention, resourceName))
+
+    #===Listeners===#
     
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        try:
+            await self.process_commands(message)
+        except Exception as e:
+            exc = sys.exc_info()
+            await self.send_message(self.TEST_CHANNEL, "Type [{}], Value [{}]\nTraceback[{}]".format(exc[0], exc[1], exc[2]))
+
+    @commands.Cog.listener()
+    async def on_command(self, ctx):
+        cogName = ctx.cog.qualified_name if ctx.cog != None else None
+        logger.info("[{}] command [{}] called by [{}]".format(cogName, ctx.message.content, ctx.message.author))
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        errorType = type(error)
+
+        if errorType == commands.errors.CommandNotFound:
+            puncPattern = ".[{}]+".format(re.escape(string.punctuation))
+            if not (re.match(puncPattern, ctx.message.content)):
+                logger.debug("Command [{}] not found".format(ctx.message.content))
+                await self.send_message(ctx.channel, "Command **{}** not found, use .help for a list".format(ctx.message.content))
+            return
+
+        if not ctx.command: return
+        command = ctx.command.name
+
+        if errorType == commands.errors.MissingRequiredArgument:
+            if command == "logs":
+                await ctx.channel.send("Bot log", file = File("logs/bot.log", filename = "bot.log"))
+            else:
+                await self.send_message(ctx.channel, error)
+
+        elif (command == "optime") and (str(error) == "Command raised an exception: ValueError: hour must be in 0..23"):
+            logger.debug("Optime modifier is too large")
+            await self.send_message(ctx.channel, "Optime modifier is too large")
+        else:
+            logger.warning(error)
+            await self.send_message(ctx.channel, error)  
+
     @commands.Cog.listener()
     async def on_ready(self):
         print("===Bot connected/reconnected===")
@@ -135,6 +177,7 @@ class Utility(commands.Cog):
         self.OP_NEWS_CHANNEL = self.bot.get_channel(int(config['discord']['op_news_channel']))
         self.STAFF_CHANNEL = self.bot.get_channel(int(config['discord']['staff_channel']))
         self.TEST_CHANNEL = self.bot.get_channel(int(config['discord']['test_channel']))
+        
         self.ADMIN_ROLE_ID = int(config['discord']['admin_role'])
         self.RECRUIT_ROLE_ID = int(config['discord']['recruit_role'])
         self.TDG_ROLE_ID = int(config['discord']['tdg_role'])
