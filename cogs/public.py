@@ -8,7 +8,7 @@ import subprocess
 import aiohttp
 from bs4 import BeautifulSoup
 from discord.ext import commands
-from pytz import timezone, UnknownTimeZoneError
+from pytz import timezone
 
 logger = logging.getLogger('bot')
 
@@ -131,18 +131,14 @@ class Public(commands.Cog):
             outString = "Optime {} starts in {}!".format(modifier, dt)
       
         if timez != None:
-            try:
-                if timez.upper() in EXTRA_TIMEZONES:
-                    timez = timezone(EXTRA_TIMEZONES[timez.upper()])
-                else:
-                    timez = timezone(timez)
-                localTime = datetime.now(tz = timezone('Europe/London')).replace(hour = 18 + modifier)
-                localTime = localTime.astimezone(timez)
-                outString += "\n({}:00:00 {})".format(localTime.hour, timez.zone)
-            except UnknownTimeZoneError as e:
-                logger.debug("Invalid timezone: {}".format(timezone))
-                await self.utility.send_message(ctx.channel, "Invalid timezone")
-                return
+            if timez.upper() in EXTRA_TIMEZONES:
+                timez = timezone(EXTRA_TIMEZONES[timez.upper()])
+            else:
+                timez = timezone(timez)
+
+            localTime = datetime.now(tz = timezone('Europe/London')).replace(hour = 18 + modifier)
+            localTime = localTime.astimezone(timez)
+            outString += "\n({}:00:00 {})".format(localTime.hour, timez.zone)
 
         await self.utility.send_message(ctx.channel, outString)
             
@@ -161,12 +157,7 @@ class Public(commands.Cog):
             await self.utility.send_message(ctx.channel, "Pong!")
         else:
             await self.utility.send_message(ctx.channel, "Pinging...")
-            try:
-                p = subprocess.check_output(['ping', host])
-            except subprocess.CalledProcessError as e:
-                logger.warning(e)
-                await self.utility.send_message(ctx.channel, "Ping failed: {}".format(e.returncode))
-                return
+            p = subprocess.check_output(['ping', host])
             await self.utility.send_message(ctx.channel, "```{}```".format(p.decode("utf-8")))
     
     @commands.command(aliases = ['rank'])

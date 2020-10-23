@@ -40,14 +40,9 @@ class Dev(commands.Cog):
     @commands.command(name = "load", hidden = True)
     @is_dev()
     async def _load(self, ctx, ext: str):
-        try:
-            self.bot.load_extension("cogs." + ext)
-            logger.info("=========Loaded {} extension=========".format(ext))
-            await self.utility.send_message(ctx.channel, "Loaded {} extension".format(ext))
-        except Exception as e:
-            logger.critical("Failed to load {} extension".format(ext))
-            logger.critical(e)
-            await self.utility.send_message(ctx.channel, e)
+        self.bot.load_extension("cogs." + ext)
+        logger.info("=========Loaded {} extension=========".format(ext))
+        await self.utility.send_message(ctx.channel, "Loaded {} extension".format(ext))
     
     @commands.command(name = "resources", hidden = True)
     @is_dev()
@@ -68,14 +63,9 @@ class Dev(commands.Cog):
     @commands.command(name = "reload", hidden = True)
     @is_dev()
     async def _reload(self, ctx, ext: str):
-        try:
-            self.bot.reload_extension("cogs." + ext)
-            logger.info("=========Reloaded {} extension=========".format(ext))
-            await self.utility.send_message(ctx.channel, "Reloaded {} extension".format(ext))
-        except Exception as e:
-            logger.critical("Failed to reload {} extension".format(ext))
-            logger.critical(e)
-            await self.utility.send_message(ctx.channel, e)
+        self.bot.reload_extension("cogs." + ext)
+        logger.info("=========Reloaded {} extension=========".format(ext))
+        await self.utility.send_message(ctx.channel, "Reloaded {} extension".format(ext))
 
     @commands.command(name = "restart", hidden = True) 
     @is_dev()

@@ -7,7 +7,8 @@ import string
 from discord import File
 from discord.ext import commands
 from datetime import datetime, timedelta
-from pytz import timezone
+from pytz import timezone, UnknownTimeZoneError
+from subprocess import CalledProcessError
 
 logger = logging.getLogger('bot')
 
@@ -108,19 +109,10 @@ class Utility(commands.Cog):
             newResource = attachments[0]
             resourceName = newResource.filename
             if resourceName in os.listdir("resources/"):
-                try:
-                    os.remove("resources/backups/{}.bak".format(resourceName))
-                    logger.debug("Removed {}.bak".format(resourceName))
-                except FileNotFoundError as e:
-                    logger.debug("No {}.bak exists, can't remove".format(resourceName))
-
-                try:
-                    os.rename("resources/{}".format(resourceName), "resources/backups/{}.bak".format(resourceName))
-                    logger.info("Saved {} to {}.bak".format(resourceName, resourceName))
-                except FileNotFoundError as e:
-                    logger.debug("No {} exists, can't backup".format(resourceName))
-
+                os.remove("resources/backups/{}.bak".format(resourceName))
+                os.rename("resources/{}".format(resourceName), "resources/backups/{}.bak".format(resourceName))
                 await newResource.save("resources/{}".format(resourceName))
+                
                 await self.send_message(ctx.channel, "{} {} has been updated".format(ctx.author.mention, resourceName))
             else:
                 await self.send_message(ctx.channel, "{} {} not in resources".format(ctx.author.mention, resourceName))
@@ -146,18 +138,36 @@ class Utility(commands.Cog):
         if not ctx.command: return
         command = ctx.command.name
 
+        outString = error
+        
         if errorType == commands.errors.MissingRequiredArgument:
             if command == "logs":
                 await ctx.channel.send("Bot log", file = File("logs/bot.log", filename = "bot.log"))
-            else:
-                await self.send_message(ctx.channel, error)
+                return
 
-        elif (command == "optime") and (str(error) == "Command raised an exception: ValueError: hour must be in 0..23"):
-            logger.debug("Optime modifier is too large")
-            await self.send_message(ctx.channel, "Optime modifier is too large")
-        else:
-            logger.warning(error)
-            await self.send_message(ctx.channel, error)  
+        elif errorType == commands.errors.ExtensionNotLoaded:
+            await self.send_message(ctx.channel, command)
+            if command == "reload":
+                outString = "Cog not previously loaded"
+
+        elif errorType == CalledProcessError:
+            if command == "ping":
+                outString = "Ping failed: {}".format(error.returncode)
+
+        elif errorType == UnknownTimeZoneError:
+            if command == "optime":
+                outString = "Invalid timezone"
+
+        elif errorType == commands.errors.CommandInvokeError:
+            if (str(error) == "Command raised an exception: ValueError: hour must be in 0..23"):
+                if command == "optime":
+                    outString = "Optime modifier is too large"
+            
+            elif re.match("Command raised an exception: ExtensionNotLoaded:", str(error)):
+                if command == "reload":
+                    outString = "Cog not previously loaded"
+
+        await self.send_message(ctx.channel, outString)
 
     @commands.Cog.listener()
     async def on_ready(self):

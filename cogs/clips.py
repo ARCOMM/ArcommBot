@@ -233,12 +233,8 @@ class Clips(commands.Cog):
         if (len(resultString) <= 2000):
             await self.utility.send_message(channel, resultString)
         else:
-            try:
-                with open("resources/clip_results.txt", "w") as resultFile:
-                    n = resultFile.write(resultString)
-            except Exception as e:
-                print(e)
-                return
+            with open("resources/clip_results.txt", "w") as resultFile:
+                n = resultFile.write(resultString)
 
             await channel.send("{} results".format(numResults), file = File("resources/clip_results.txt", filename = "clip_results.txt"))
     
@@ -256,47 +252,41 @@ class Clips(commands.Cog):
             message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
             
             if (self.getEmojiCountFromReactionList("👍", message.reactions) == 0):
-                try:
-                    clip, link = self.getClipAndLinkFromString(message.clean_content)
-                    if (link != None):
-                        if (clip != None):
-                            video = self.getVideoFromVideoId(clip['video_id'])
-                            videoId = None if (video == None) else clip['video_id']
+                clip, link = self.getClipAndLinkFromString(message.clean_content)
+                if (link != None):
+                    if (clip != None):
+                        video = self.getVideoFromVideoId(clip['video_id'])
+                        videoId = None if (video == None) else clip['video_id']
 
-                            createdDt = clip['created_at'][:-1].split('T')
-                            createdDate, createdTime = createdDt[0], createdDt[1]
+                        createdDt = clip['created_at'][:-1].split('T')
+                        createdDate, createdTime = createdDt[0], createdDt[1]
 
-                            self.clips.storeClip(link, "Twitch", clip['broadcaster_name'], clip['title'], clip['view_count'], None, videoId, createdDate, createdTime, "Clip")
-                            await message.add_reaction("👍")
-                            return
+                        self.clips.storeClip(link, "Twitch", clip['broadcaster_name'], clip['title'], clip['view_count'], None, videoId, createdDate, createdTime, "Clip")
+                        await message.add_reaction("👍")
+                        return
 
-                    video, videoId = self.getVideoAndIdFromString(message.clean_content)
-                    if (videoId != None):
-                        if (video != None):
-                            createdDt = video['created_at'][:-1].split('T')
-                            createdDate, createdTime = createdDt[0], createdDt[1]
+                video, videoId = self.getVideoAndIdFromString(message.clean_content)
+                if (videoId != None):
+                    if (video != None):
+                        createdDt = video['created_at'][:-1].split('T')
+                        createdDate, createdTime = createdDt[0], createdDt[1]
 
-                            videoType = "Clip" if (video['type'] == "highlight") else "Video"
-                            self.clips.storeClip(video['id'], "Twitch", video['user_name'], video['title'], video['view_count'], video['duration'], video['id'], createdDate, createdTime, videoType)
-                            await message.add_reaction("👍")
-                            return
+                        videoType = "Clip" if (video['type'] == "highlight") else "Video"
+                        self.clips.storeClip(video['id'], "Twitch", video['user_name'], video['title'], video['view_count'], video['duration'], video['id'], createdDate, createdTime, videoType)
+                        await message.add_reaction("👍")
+                        return
                     
-                    clip, link = self.getImgurClipAndLinkFromString(message.clean_content)
-                    if (link != None):
-                        if (clip != None):
-                            createdDt = str(datetime.utcfromtimestamp(clip['datetime'])).split(' ')
-                            createdDate, createdTime = createdDt[0], createdDt[1]
+                clip, link = self.getImgurClipAndLinkFromString(message.clean_content)
+                if (link != None):
+                    if (clip != None):
+                        createdDt = str(datetime.utcfromtimestamp(clip['datetime'])).split(' ')
+                        createdDate, createdTime = createdDt[0], createdDt[1]
 
-                            if (clip['type'] == 'video/mp4' or clip['type'] == 'image/gif'):
-                                self.clips.storeClip(clip['id'], "Imgur", message.author.name, clip['title'], clip['views'], None, clip['id'], createdDate, createdTime, "Clip")
-                                await message.add_reaction("👍")
-                                return
+                        if (clip['type'] == 'video/mp4' or clip['type'] == 'image/gif'):
+                            self.clips.storeClip(clip['id'], "Imgur", message.author.name, clip['title'], clip['views'], None, clip['id'], createdDate, createdTime, "Clip")
+                            await message.add_reaction("👍")
+                            return
 
-                except Exception as e:
-                    print(e)
-                    exc_type, exc_obj, exc_tb = sys.exc_info()
-                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                    await self.utility.send_message(self.utility.TEST_CHANNEL, "{}, {}, {}".format(exc_type, fname, exc_tb.tb_lineno))
 
 
 def setup(bot):
