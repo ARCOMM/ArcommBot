@@ -19,6 +19,14 @@ bot = commands.Bot(command_prefix = '.', case_insensitive = True, intents = inte
 TOKEN = os.getenv("DISCORD_TOKEN")
 startup_extensions = ["utility", "dev", "tasking", "staff", "public", "clips"]
 
+@bot.event
+async def on_message(message):
+    try:
+        await bot.process_commands(message)
+    except Exception as e:
+        exc = sys.exc_info()
+        await message.channel.send("Type [{}], Value [{}]\nTraceback[{}]".format(exc[0], exc[1], exc[2]))
+
 def setupLogging():
     logger = logging.getLogger('discord')
     logger.setLevel(logging.DEBUG)

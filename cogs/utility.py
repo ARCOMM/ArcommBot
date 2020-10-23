@@ -2,6 +2,7 @@ import configparser
 import logging
 import os
 import re
+import string
 
 from discord import File
 from discord.ext import commands
@@ -125,14 +126,6 @@ class Utility(commands.Cog):
                 await self.send_message(ctx.channel, "{} {} not in resources".format(ctx.author.mention, resourceName))
 
     #===Listeners===#
-    
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        try:
-            await self.process_commands(message)
-        except Exception as e:
-            exc = sys.exc_info()
-            await self.send_message(self.TEST_CHANNEL, "Type [{}], Value [{}]\nTraceback[{}]".format(exc[0], exc[1], exc[2]))
 
     @commands.Cog.listener()
     async def on_command(self, ctx):
@@ -177,7 +170,7 @@ class Utility(commands.Cog):
         self.OP_NEWS_CHANNEL = self.bot.get_channel(int(config['discord']['op_news_channel']))
         self.STAFF_CHANNEL = self.bot.get_channel(int(config['discord']['staff_channel']))
         self.TEST_CHANNEL = self.bot.get_channel(int(config['discord']['test_channel']))
-        
+
         self.ADMIN_ROLE_ID = int(config['discord']['admin_role'])
         self.RECRUIT_ROLE_ID = int(config['discord']['recruit_role'])
         self.TDG_ROLE_ID = int(config['discord']['tdg_role'])

@@ -81,7 +81,7 @@ class Dev(commands.Cog):
     @is_dev()
     async def _restart(self, ctx) :
         print("============ RESTARTING ============")
-        logger.critical("============ RESTARTING ============")
+        await self.utility.send_message(ctx.channel, "Restarting")
         ArcommBot.restart()
 
     @commands.command(name = "shutdown", hidden = True)
