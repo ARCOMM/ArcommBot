@@ -27,7 +27,7 @@ config.read('resources/config.ini')
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
-SERVICE_ACCOUNT_FILE = 'resources/arcommbot-1c476e6f4869.json'
+SERVICE_ACCOUNT_FILE = 'resources/restricted/arcommbot-1c476e6f4869.json'
 
 credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 service = build('calendar', 'v3', credentials = credentials)
