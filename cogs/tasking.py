@@ -167,7 +167,8 @@ class Tasking(commands.Cog):
             steamChanged, steamPost = await self.handleSteam()
 
             if githubChanged or cupChanged or steamChanged:
-                await self.utility.send_message(self.utility.STAFF_CHANNEL, "<@&{}>\n{}{}{}".format(self.utility.ADMIN_ROLE_ID, githubPost, cupPost, steamPost))
+                outString = "<@&{}>\n{}{}{}".format(self.utility.roles['admin'], githubPost, cupPost, steamPost)
+                await self.utility.send_message(self.utility.channels['staff'], outString)
 
         except Exception as e:
             logger.error(traceback.format_exc())
@@ -177,7 +178,7 @@ class Tasking(commands.Cog):
         try:
             a3syncChanged, a3syncPost = await self.handleA3Sync()
             if a3syncChanged:
-                await self.utility.send_message(self.utility.ANNOUNCE_CHANNEL, a3syncPost)
+                await self.utility.send_message(self.utility.channels['announcements'], a3syncPost)
 
         except Exception as e:
             logger.error(traceback.format_exc())
@@ -191,8 +192,7 @@ class Tasking(commands.Cog):
         #now = datetime(2020, 4, 22) #A Wednesday
         if now.weekday() in targetDays:
             logger.debug("Called within targetDays")
-            channel = self.utility.STAFF_CHANNEL
-            await self.recruitmentPost(channel, pingAdmins = True)
+            await self.recruitmentPost(self.utility.channels['staff'], pingAdmins = True)
 
     @recruitTask.before_loop
     async def before_recruitTask(self):
@@ -249,38 +249,32 @@ class Tasking(commands.Cog):
         timeUntilStr = str(timeUntil).split(".")[0] #Remove microseconds
 
         if re.search("recruit", summary.lower()) != None:
-            ping = "<@&{}>".format(self.utility.RECRUIT_ROLE_ID)
+            ping = "<@&{}>".format(self.utility.roles['recruit'])
         elif re.search("training", summary.lower()) != None:
-            ping = "<@&{}>".format(self.utility.TRAINING_ROLE_ID)
+            ping = "<@&{}>".format(self.utility.roles['training'])
         elif re.search("tactical", summary.lower()) != None:
-            ping = "<@&{}>".format(self.utility.TDG_ROLE_ID)
+            ping = "<@&{}>".format(self.utility.roles['tdg'])
         else:
             ping = "@here"
 
         outString = "{}\n```md\n# {}\n\nStarting in {}\n\nStart: {} UTC\nEnd:   {} UTC```".format(ping, summary, timeUntilStr, startTimeString, endTimeString)
-        channel = self.utility.OP_NEWS_CHANNEL
-        #outString = "{}\n```md\n# {}\n\nStarting in {}```".format(ping, summary, timeUntil)
-        await self.utility.send_message(channel, outString)
+        await self.utility.send_message(self.utility.channels['op_news'], outString)
 
         await asyncio.sleep((timeUntil - timedelta(minutes = 5)).seconds)
 
         outString = "{}\n```md\n# {}\n\nStarting in 5 minutes```".format(ping, summary)
-        await self.utility.send_message(channel, outString)
+        await self.utility.send_message(self.utility.channels['op_news'], outString)
 
     async def attendancePost(self):
         logger.debug("attendancePost called")
 
-        channel = self.utility.ADMIN_CHANNEL
-        role = self.utility.ADMIN_ROLE_ID
-        outString = "<@&{}> Collect attendance!".format(role)
-
-        await self.utility.send_message(channel, outString)
+        outString = "<@&{}> Collect attendance!".format(self.utility.roles['admin'])
+        await self.utility.send_message(self.utility.channels['admin'], outString)
             
     async def recruitmentPost(self, channel, pingAdmins = False):
         logger.debug("recruitmentPost called")
         if pingAdmins:
-            role = self.utility.ADMIN_ROLE_ID
-            introString = "<@&{}> Post recruitment on <https://www.reddit.com/r/FindAUnit>".format(role)
+            introString = "<@&{}> Post recruitment on <https://www.reddit.com/r/FindAUnit>".format(self.utility.roles['admin'])
         else:
             introString = "Post recruitment on <https://www.reddit.com/r/FindAUnit>"
         

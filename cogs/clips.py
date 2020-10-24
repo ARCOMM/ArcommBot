@@ -129,7 +129,7 @@ class Clips(commands.Cog):
         imgmiss = 0
         err = 0
 
-        async for message in self.utility.FOOTAGE_CHANNEL.history(limit=None):
+        async for message in self.utility.channels['footage'].history(limit=None):
             counter += 1
             if counter % 500 == 0:
                 await self.utility.send_message(ctx.channel, "{}, {}, {}, {}, {}, {}".format(counter, succ, miss, imgsucc, imgmiss, err))
@@ -182,7 +182,7 @@ class Clips(commands.Cog):
                 print(e)
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                await self.utility.send_message(self.utility.TEST_CHANNEL, "{}, {}, {}".format(exc_type, fname, exc_tb.tb_lineno))
+                await self.utility.send_message(self.utility.channels['testing'], "{}, {}, {}".format(exc_type, fname, exc_tb.tb_lineno))
         await self.utility.send_message(ctx.channel, "Finished")
         
     #===Utility===#
@@ -244,7 +244,7 @@ class Clips(commands.Cog):
     async def on_ready(self):
         self.utility = self.bot.get_cog("Utility")
         self.clips.remake()
-        await self.utility.send_message(self.utility.TEST_CHANNEL, "ArcommBot is fully loaded")
+        await self.utility.send_message(self.utility.channels['testing'], "ArcommBot is fully loaded")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -286,8 +286,6 @@ class Clips(commands.Cog):
                             self.clips.storeClip(clip['id'], "Imgur", message.author.name, clip['title'], clip['views'], None, clip['id'], createdDate, createdTime, "Clip")
                             await message.add_reaction("👍")
                             return
-
-
 
 def setup(bot):
     bot.add_cog(Clips(bot))

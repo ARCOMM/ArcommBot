@@ -48,7 +48,7 @@ class Dev(commands.Cog):
     @is_dev()
     async def _resources(self, ctx):
         outString = "```\n{}```".format("\n".join(os.listdir("resources/")))
-        await self.utility.send_message(self.utility.TEST_CHANNEL, outString)
+        await self.utility.send_message(ctx.channel, outString)
 
     @commands.command(name = "getres", hidden = True)
     @is_dev()
