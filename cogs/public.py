@@ -307,6 +307,7 @@ class Public(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         self.utility = self.bot.get_cog("Utility")
+        await self.utility.send_message(self.utility.channels['testing'], "ArcommBot is fully loaded")
 
 def setup(bot):
     bot.add_cog(Public(bot))

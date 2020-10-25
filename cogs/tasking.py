@@ -54,7 +54,7 @@ class CalendarDB():
             lastDT = timeFrom
 
         request = self.collection.list(calendarId = "arcommdrive@gmail.com", timeMin = lastDT, orderBy = "startTime", singleEvents = True)
-        #request = self.collection.list(calendarId = "bmpdcnk8pab1drvf4qgt4q1580@group.calendar.google.com", timeMin = now, orderBy = "startTime", singleEvents = True)
+        #request = self.collection.list(calendarId = "bmpdcnk8pab1drvf4qgt4q1580@group.calendar.google.com", timeMin = lastDT, orderBy = "startTime", singleEvents = True)
         response = request.execute()
         c = self.conn.cursor()
         c.execute("DELETE FROM calendar")
@@ -248,22 +248,25 @@ class Tasking(commands.Cog):
 
         timeUntilStr = str(timeUntil).split(".")[0] #Remove microseconds
 
-        if re.search("recruit", summary.lower()) != None:
-            ping = "<@&{}>".format(self.utility.roles['recruit'])
-        elif re.search("training", summary.lower()) != None:
-            ping = "<@&{}>".format(self.utility.roles['training'])
-        elif re.search("tactical", summary.lower()) != None:
-            ping = "<@&{}>".format(self.utility.roles['tdg'])
-        else:
-            ping = "@here"
+        ping = "@here"
+        channel = self.utility.channels['testing']
+
+        for event in config['calendar']:
+            if re.search(event, summary.lower()) != None:
+                eventArray = json.loads(config['calendar'][event])
+                if eventArray[0] != "ignored":
+                    ping = "<@&{}>".format(self.utility.roles[eventArray[0]])
+                    channel = self.utility.channels[eventArray[1]]
+                else:
+                    return
 
         outString = "{}\n```md\n# {}\n\nStarting in {}\n\nStart: {} UTC\nEnd:   {} UTC```".format(ping, summary, timeUntilStr, startTimeString, endTimeString)
-        await self.utility.send_message(self.utility.channels['op_news'], outString)
+        await self.utility.send_message(channel, outString)
 
         await asyncio.sleep((timeUntil - timedelta(minutes = 5)).seconds)
 
         outString = "{}\n```md\n# {}\n\nStarting in 5 minutes```".format(ping, summary)
-        await self.utility.send_message(self.utility.channels['op_news'], outString)
+        await self.utility.send_message(channel, outString)
 
     async def attendancePost(self):
         logger.debug("attendancePost called")

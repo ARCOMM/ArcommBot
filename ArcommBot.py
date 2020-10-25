@@ -17,7 +17,7 @@ intents.members = True
 bot = commands.Bot(command_prefix = '.', case_insensitive = True, intents = intents)
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-startup_extensions = ["utility", "dev", "tasking", "staff", "public", "clips"]
+startup_extensions = ["utility", "dev", "tasking", "staff", "public"]
 
 @bot.event
 async def on_message(message):
