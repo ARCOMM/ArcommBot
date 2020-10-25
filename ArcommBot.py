@@ -1,7 +1,8 @@
-import os
+import configparser
 from dotenv import load_dotenv
 import logging
 import logging.handlers
+import os
 import subprocess
 import sys
 
@@ -9,15 +10,14 @@ import discord
 from discord.ext import commands
 
 load_dotenv()
+TOKEN = os.getenv("DISCORD_TOKEN")
 
+config = configparser.ConfigParser()
+config.read('resources/config.ini')
 
 intents = discord.Intents.default()
 intents.members = True
-
 bot = commands.Bot(command_prefix = '.', case_insensitive = True, intents = intents)
-
-TOKEN = os.getenv("DISCORD_TOKEN")
-startup_extensions = ["utility", "dev", "tasking", "staff", "public"]
 
 @bot.event
 async def on_message(message):
@@ -42,8 +42,9 @@ def setupLogging():
 
 def loadExtensions():
     logger = logging.getLogger('bot')
+    startupExtensions = config['cogs']
     
-    for extension in startup_extensions:
+    for extension in startupExtensions:
         try:
             bot.load_extension("cogs." + extension)
             logger.info("=========Loaded {} extension=========".format(extension))
