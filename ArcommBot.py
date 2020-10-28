@@ -1,22 +1,31 @@
-import os
+import configparser
 from dotenv import load_dotenv
 import logging
 import logging.handlers
+import os
+import subprocess
 import sys
 
 import discord
 from discord.ext import commands
 
 load_dotenv()
+TOKEN = os.getenv("DISCORD_TOKEN")
 
+config = configparser.ConfigParser()
+config.read('resources/config.ini')
 
 intents = discord.Intents.default()
 intents.members = True
-
 bot = commands.Bot(command_prefix = '.', case_insensitive = True, intents = intents)
 
-TOKEN = os.getenv("DISCORD_TOKEN")
-startup_extensions = ["utility", "dev", "tasking", "staff", "public", "clips"]
+@bot.event
+async def on_message(message):
+    try:
+        await bot.process_commands(message)
+    except Exception as e:
+        exc = sys.exc_info()
+        await message.channel.send("Type [{}], Value [{}]\nTraceback[{}]".format(exc[0], exc[1], exc[2]))
 
 def setupLogging():
     logger = logging.getLogger('discord')
@@ -33,8 +42,9 @@ def setupLogging():
 
 def loadExtensions():
     logger = logging.getLogger('bot')
+    startupExtensions = config['cogs']
     
-    for extension in startup_extensions:
+    for extension in startupExtensions:
         try:
             bot.load_extension("cogs." + extension)
             logger.info("=========Loaded {} extension=========".format(extension))
@@ -44,7 +54,7 @@ def loadExtensions():
             logger.critical(e)   
 
 def restart():
-    os.execv(sys.executable, [sys.executable, __file__] + sys.argv)
+    subprocess.call(["python", os.path.join(sys.path[0], __file__)] + sys.argv[1:])
 
 if __name__ == "__main__":
     setupLogging()

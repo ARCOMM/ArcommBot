@@ -27,7 +27,7 @@ config.read('resources/config.ini')
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
-SERVICE_ACCOUNT_FILE = 'resources/arcommbot-1c476e6f4869.json'
+SERVICE_ACCOUNT_FILE = 'resources/restricted/arcommbot-1c476e6f4869.json'
 
 credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 service = build('calendar', 'v3', credentials = credentials)
@@ -54,7 +54,7 @@ class CalendarDB():
             lastDT = timeFrom
 
         request = self.collection.list(calendarId = "arcommdrive@gmail.com", timeMin = lastDT, orderBy = "startTime", singleEvents = True)
-        #request = self.collection.list(calendarId = "bmpdcnk8pab1drvf4qgt4q1580@group.calendar.google.com", timeMin = now, orderBy = "startTime", singleEvents = True)
+        #request = self.collection.list(calendarId = "bmpdcnk8pab1drvf4qgt4q1580@group.calendar.google.com", timeMin = lastDT, orderBy = "startTime", singleEvents = True)
         response = request.execute()
         c = self.conn.cursor()
         c.execute("DELETE FROM calendar")
@@ -167,7 +167,8 @@ class Tasking(commands.Cog):
             steamChanged, steamPost = await self.handleSteam()
 
             if githubChanged or cupChanged or steamChanged:
-                await self.utility.send_message(self.utility.STAFF_CHANNEL, "<@&{}>\n{}{}{}".format(self.utility.ADMIN_ROLE_ID, githubPost, cupPost, steamPost))
+                outString = "<@&{}>\n{}{}{}".format(self.utility.roles['admin'], githubPost, cupPost, steamPost)
+                await self.utility.send_message(self.utility.channels['staff'], outString)
 
         except Exception as e:
             logger.error(traceback.format_exc())
@@ -177,7 +178,7 @@ class Tasking(commands.Cog):
         try:
             a3syncChanged, a3syncPost = await self.handleA3Sync()
             if a3syncChanged:
-                await self.utility.send_message(self.utility.ANNOUNCE_CHANNEL, a3syncPost)
+                await self.utility.send_message(self.utility.channels['announcements'], a3syncPost)
 
         except Exception as e:
             logger.error(traceback.format_exc())
@@ -191,8 +192,7 @@ class Tasking(commands.Cog):
         #now = datetime(2020, 4, 22) #A Wednesday
         if now.weekday() in targetDays:
             logger.debug("Called within targetDays")
-            channel = self.utility.STAFF_CHANNEL
-            await self.recruitmentPost(channel, pingAdmins = True)
+            await self.recruitmentPost(self.utility.channels['staff'], pingAdmins = True)
 
     @recruitTask.before_loop
     async def before_recruitTask(self):
@@ -248,18 +248,19 @@ class Tasking(commands.Cog):
 
         timeUntilStr = str(timeUntil).split(".")[0] #Remove microseconds
 
-        if re.search("recruit", summary.lower()) != None:
-            ping = "<@&{}>".format(self.utility.RECRUIT_ROLE_ID)
-        elif re.search("training", summary.lower()) != None:
-            ping = "<@&{}>".format(self.utility.TRAINING_ROLE_ID)
-        elif re.search("tactical", summary.lower()) != None:
-            ping = "<@&{}>".format(self.utility.TDG_ROLE_ID)
-        else:
-            ping = "@here"
+        ping = "@here"
+        channel = self.utility.channels['op_news']
+
+        for event in config['calendar']:
+            if re.search(event, summary.lower()) != None:
+                eventArray = json.loads(config['calendar'][event])
+                if eventArray[0] != "ignored":
+                    ping = "<@&{}>".format(self.utility.roles[eventArray[0]])
+                    channel = self.utility.channels[eventArray[1]]
+                else:
+                    return
 
         outString = "{}\n```md\n# {}\n\nStarting in {}\n\nStart: {} UTC\nEnd:   {} UTC```".format(ping, summary, timeUntilStr, startTimeString, endTimeString)
-        channel = self.utility.OP_NEWS_CHANNEL
-        #outString = "{}\n```md\n# {}\n\nStarting in {}```".format(ping, summary, timeUntil)
         await self.utility.send_message(channel, outString)
 
         await asyncio.sleep((timeUntil - timedelta(minutes = 5)).seconds)
@@ -270,17 +271,13 @@ class Tasking(commands.Cog):
     async def attendancePost(self):
         logger.debug("attendancePost called")
 
-        channel = self.utility.ADMIN_CHANNEL
-        role = self.utility.ADMIN_ROLE_ID
-        outString = "<@&{}> Collect attendance!".format(role)
-
-        await self.utility.send_message(channel, outString)
+        outString = "<@&{}> Collect attendance!".format(self.utility.roles['admin'])
+        await self.utility.send_message(self.utility.channels['admin'], outString)
             
     async def recruitmentPost(self, channel, pingAdmins = False):
         logger.debug("recruitmentPost called")
         if pingAdmins:
-            role = self.utility.ADMIN_ROLE_ID
-            introString = "<@&{}> Post recruitment on <https://www.reddit.com/r/FindAUnit>".format(role)
+            introString = "<@&{}> Post recruitment on <https://www.reddit.com/r/FindAUnit>".format(self.utility.roles['admin'])
         else:
             introString = "Post recruitment on <https://www.reddit.com/r/FindAUnit>"
         

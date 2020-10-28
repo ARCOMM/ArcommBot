@@ -40,20 +40,15 @@ class Dev(commands.Cog):
     @commands.command(name = "load", hidden = True)
     @is_dev()
     async def _load(self, ctx, ext: str):
-        try:
-            self.bot.load_extension("cogs." + ext)
-            logger.info("=========Loaded {} extension=========".format(ext))
-            await self.utility.send_message(ctx.channel, "Loaded {} extension".format(ext))
-        except Exception as e:
-            logger.critical("Failed to load {} extension".format(ext))
-            logger.critical(e)
-            await self.utility.send_message(ctx.channel, e)
+        self.bot.load_extension("cogs." + ext)
+        logger.info("=========Loaded {} extension=========".format(ext))
+        await self.utility.send_message(ctx.channel, "Loaded {} extension".format(ext))
     
     @commands.command(name = "resources", hidden = True)
     @is_dev()
     async def _resources(self, ctx):
         outString = "```\n{}```".format("\n".join(os.listdir("resources/")))
-        await self.utility.send_message(self.utility.TEST_CHANNEL, outString)
+        await self.utility.send_message(ctx.channel, outString)
 
     @commands.command(name = "getres", hidden = True)
     @is_dev()
@@ -68,20 +63,15 @@ class Dev(commands.Cog):
     @commands.command(name = "reload", hidden = True)
     @is_dev()
     async def _reload(self, ctx, ext: str):
-        try:
-            self.bot.reload_extension("cogs." + ext)
-            logger.info("=========Reloaded {} extension=========".format(ext))
-            await self.utility.send_message(ctx.channel, "Reloaded {} extension".format(ext))
-        except Exception as e:
-            logger.critical("Failed to reload {} extension".format(ext))
-            logger.critical(e)
-            await self.utility.send_message(ctx.channel, e)
+        self.bot.reload_extension("cogs." + ext)
+        logger.info("=========Reloaded {} extension=========".format(ext))
+        await self.utility.send_message(ctx.channel, "Reloaded {} extension".format(ext))
 
     @commands.command(name = "restart", hidden = True) 
     @is_dev()
     async def _restart(self, ctx) :
         print("============ RESTARTING ============")
-        logger.critical("============ RESTARTING ============")
+        await self.utility.send_message(ctx.channel, "Restarting")
         ArcommBot.restart()
 
     @commands.command(name = "shutdown", hidden = True)
@@ -124,46 +114,7 @@ class Dev(commands.Cog):
         filename = await self._update(ctx)
         await self._reload(ctx, filename)
 
-    #===Listeners===#
-
-    @commands.Cog.listener()
-    async def on_command(self, ctx):
-        command = ctx.message.content
-        author = ctx.message.author
-        cogName = ctx.cog.qualified_name if ctx.cog != None else None
-        logger.info("[{}] command [{}] called by [{}]".format(cogName, command, author))
-
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
-        errorType = type(error)
-
-        if errorType == commands.errors.CommandNotFound:
-            puncPattern = ".[{}]+".format(re.escape(string.punctuation))
-            if not (re.match(puncPattern, ctx.message.content)):
-                logger.debug("Command [{}] not found".format(ctx.message.content))
-                await self.utility.send_message(ctx.channel, "Command **{}** not found, use .help for a list".format(ctx.message.content))
-            return
-
-        if not ctx.command: return
-        command = ctx.command.name
-
-        if errorType == commands.errors.MissingRequiredArgument:
-            if command == "logs":
-                await ctx.channel.send("Bot log", file = File("logs/bot.log", filename = "bot.log"))
-            else:
-                await self.utility.send_message(ctx.channel, error)
-
-        elif (command == "optime") and (str(error) == "Command raised an exception: ValueError: hour must be in 0..23"):
-            logger.debug("Optime modifier is too large")
-            await self.utility.send_message(ctx.channel, "Optime modifier is too large")
-        else:
-            logger.warning(error)
-            await self.utility.send_message(ctx.channel, error)   
-
-    @commands.Cog.listener()
-    async def on_error(self, event):
-        exc = sys.exc_info()
-        logger.warning("Type [{}], Value [{}]\nTraceback[{}]".format(exc[0], exc[1], exc[2]))
+    #===Listeners===# 
     
     @commands.Cog.listener()
     async def on_ready(self):
