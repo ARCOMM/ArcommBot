@@ -249,7 +249,7 @@ class Tasking(commands.Cog):
         timeUntilStr = str(timeUntil).split(".")[0] #Remove microseconds
 
         ping = "@here"
-        channel = self.utility.channels['testing']
+        channel = self.utility.channels['op_news']
 
         for event in config['calendar']:
             if re.search(event, summary.lower()) != None:
