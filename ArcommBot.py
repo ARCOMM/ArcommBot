@@ -36,7 +36,7 @@ def setupLogging():
 
     logger = logging.getLogger('bot')
     logger.setLevel(logging.DEBUG)
-    handler = logging.handlers.TimedRotatingFileHandler(filename = 'logs/bot.log', when = 'h', interval = 6, backupCount = 4, encoding = 'utf-8')
+    handler = logging.handlers.TimedRotatingFileHandler(filename = 'logs/bot.log', when = 'h', interval = 8, backupCount = 3, encoding = 'utf-8')
     handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
     logger.addHandler(handler)
 

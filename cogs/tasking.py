@@ -253,7 +253,7 @@ class Tasking(commands.Cog):
 
         for event in config['calendar']:
             if re.search(event, summary.lower()) != None:
-                eventArray = json.loads(config['calendar'][event])
+                eventArray = config['calendar'][event][1:-1].split(", ")
                 if eventArray[0] != "ignored":
                     ping = "<@&{}>".format(self.utility.roles[eventArray[0]])
                     channel = self.utility.channels[eventArray[1]]
