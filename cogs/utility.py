@@ -139,11 +139,15 @@ class Utility(commands.Cog):
         errorType = type(error)
 
         if errorType == commands.errors.CommandNotFound:
+            if ctx.message.content[1].isdigit():
+                return
+
             puncPattern = ".[{}]+".format(re.escape(string.punctuation))
-            if not (re.match(puncPattern, ctx.message.content)):
-                logger.debug("Command [{}] not found".format(ctx.message.content))
-                await self.send_message(ctx.channel, "Command **{}** not found, use .help for a list".format(ctx.message.content))
-            return
+            if re.match(puncPattern, ctx.message.content):
+                return
+               
+            await self.send_message(ctx.channel, "Command **{}** not found, use .help for a list".format(ctx.message.content))
+            
 
         if not ctx.command: return
         command = ctx.command.name
