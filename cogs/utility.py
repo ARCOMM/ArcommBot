@@ -100,7 +100,7 @@ class Utility(commands.Cog):
             opday = today
             opday = opday.replace(hour = 18 + modifier, minute = 0, second = 0)
             if (today > opday):
-                opday = opday.replace(day = opday.day + 1)
+                opday = opday + timedelta(days = 1)
 
         return opday - today
     
