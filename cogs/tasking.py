@@ -284,40 +284,41 @@ class Tasking(commands.Cog):
         await channel.send(introString, file = File("resources/recruit_post.md", filename = "recruit_post.md"))
     
     async def handleA3Sync(self):
-        logger.debug("handleA3Sync called")
-
         lastModified = {}
         with open('resources/last_modified.json', 'r') as f:
             lastModified = json.load(f)
 
         repoChanged = False
         updatePost = ""
-        deleted, added, updated = [modName for modName in lastModified['a3sync']], [], []
+        deleted, added, updated = [mod for mod in lastModified['a3sync']], [], []
 
         async with self.session.get('http://108.61.34.58/main/') as response:
             if response.status == 200:
-                logger.debug("Response 200 - Success")
                 soup = BeautifulSoup(await response.text(), features = "lxml")
 
                 for row in soup.find_all('a', href=True)[2:]:
-                    modName = row.text[1:]
+                    mod = row.text[1:]
                     matches = re.findall(r'(\S+)', row.previous_element[:-6].strip())
                     updateString = "{} {} {}".format(matches[0], matches[1], matches[2])
                     updateDatetime = str(datetime.strptime(updateString, "%m/%d/%Y %I:%M %p"))
 
-                    if modName in lastModified['a3sync']:
-                        deleted.remove(modName)
+                    if mod in lastModified['a3sync']:
+                        deleted.remove(mod)
 
-                        if updateDatetime != lastModified['a3sync'][modName]:
+                        if updateDatetime != lastModified['a3sync'][mod]:
+                            logger.debug("{} updated ({}, {})".format(mod, lastModified['a3sync'][mod], updateDatetime))
                             repoChanged = True
-                            lastModified['a3sync'][modName] = updateDatetime
-
-                            updated.append(modName)
+                            lastModified['a3sync'][mod] = updateDatetime
+                            logger.debug("lastModified:")
+                            logger.debug(lastModified)
+                            updated.append(mod)
+                            logger.debug(updated)
                     else:
+                        logger.debug("{} added ({})".format(mod, lastModified['a3sync'][mod]))
                         repoChanged = True
-                        lastModified['a3sync'][modName] = updateDatetime
+                        lastModified['a3sync'][mod] = updateDatetime
 
-                        added.append(modName)
+                        added.append(mod)
             else:
                 logger.debug("REPO GET error: {} {} - {}".format(response.status, response.reason, await response.text()))
 
@@ -335,8 +336,11 @@ class Tasking(commands.Cog):
 
         lastModified['a3sync_size'] = newRepoSize
         for mod in deleted:
+            logger.debug("{} deleted".format(mod))
             del lastModified['a3sync'][mod]
 
+        logger.debug("Final lastModified")
+        logger.debug(lastModified)
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
         
