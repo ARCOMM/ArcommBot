@@ -1,8 +1,6 @@
 import configparser
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
-import os
-import re
 import subprocess
 
 import aiohttp
@@ -42,13 +40,15 @@ TICKET_SITES = {
 }
 
 class Public(commands.Cog):
+    '''Contains commands that can be used by anyone in the Discord channel'''
+
     def __init__(self, bot):
         self.bot = bot
         self.utility = self.bot.get_cog("Utility")
         self.session = aiohttp.ClientSession()
 
     #===Commands===#
-    
+
     @commands.command(aliases = ['daylightsavings'])
     async def dst(self, ctx):
         """Check if daylight savings has started (in London)"""
@@ -59,26 +59,26 @@ class Public(commands.Cog):
     @commands.command()
     async def members(self, ctx, *args):
         '''Get a list of members in a role
-            
+
             Usage:
                 .members rolename
         '''
 
         roleQuery = " ".join(args)
         role = self.utility.searchRoles(ctx, roleQuery, reserved = True, censorReserved = False)
-        
+
         if role:
             outString = ""
             members = role.members
             members.sort(key = self.utility.roleListKey)
 
             for member in members:
-                outString += "{} ;{}\n".format(member.nick, member.name) if (member.nick != None) else "{}\n".format(member.name)
+                outString += "{} ;{}\n".format(member.nick, member.name) if (member.nick is not None) else "{}\n".format(member.name)
 
             await self.utility.send_message(ctx.channel, "```ini\n[ {} ]\n{}```".format(role.name, outString))
         else:
             await self.utility.send_message(ctx.channel, "{} Role **{}** does not exist".format(ctx.author.mention, roleQuery))
-    
+
     @commands.command(aliases = ['myranks'])
     async def myroles(self, ctx):
         """Get a list of roles you're in"""
@@ -96,9 +96,9 @@ class Public(commands.Cog):
         """Time left until opday (Saturday optime)"""
 
         dt = self.utility.timeUntil("opday")
-        dt = self.formatDt(dt)        
+        dt = self.formatDt(dt)
         outString = "Opday starts in {}!".format(dt)
-        
+
         await self.utility.send_message(ctx.channel, outString)
 
     @commands.command(aliases = ['op'])
@@ -115,7 +115,7 @@ class Public(commands.Cog):
 
         try:
             modifier = int(modifier)
-        except Exception as e:
+        except Exception:
             logger.debug(".optime modifier was not an int, assume timezone")
             timez = modifier
             modifier = 0
@@ -129,8 +129,8 @@ class Public(commands.Cog):
             outString = "Optime +{} starts in {}!".format(modifier, dt)
         else:
             outString = "Optime {} starts in {}!".format(modifier, dt)
-      
-        if timez != None:
+
+        if timez is not None:
             if timez.upper() in EXTRA_TIMEZONES:
                 timez = timezone(EXTRA_TIMEZONES[timez.upper()])
             else:
@@ -141,7 +141,7 @@ class Public(commands.Cog):
             outString += "\n({}:00:00 {})".format(localTime.hour, timez.zone)
 
         await self.utility.send_message(ctx.channel, outString)
-            
+
     @commands.command()
     async def ping(self, ctx, host = None):
         """Check bot response, or ping host/ip address
@@ -153,13 +153,13 @@ class Public(commands.Cog):
             --ping host ip/address
         """
 
-        if host == None:
+        if host is None:
             await self.utility.send_message(ctx.channel, "Pong!")
         else:
             await self.utility.send_message(ctx.channel, "Pinging...")
             p = subprocess.check_output(['ping', host])
             await self.utility.send_message(ctx.channel, "```{}```".format(p.decode("utf-8")))
-    
+
     @commands.command(aliases = ['rank'])
     async def role(self, ctx, *args):
         """Join or leave a role (with autocomplete)
@@ -199,7 +199,7 @@ class Public(commands.Cog):
             roleList.append(role)
             if len(role.name) > longestName:
                 longestName = len(role.name)
-        
+
         outString = ""
 
         for role in roleList:
@@ -241,14 +241,14 @@ class Public(commands.Cog):
                     if elem != None:
                         elemContent = elem.findNext('dd').text
                         outString += "# {}\n{}\n\n".format(elem.text, elemContent.lstrip().rstrip())
-                        
+
                 if outString != "":
                     await self.utility.send_message(ctx.channel, "<{}>\n```md\n{}```".format(wikiUrl, outString))
                 else:
                     await self.utility.send_message(ctx.channel, "<{}>".format(wikiUrl))
             else:
                 await self.utility.send_message(ctx.channel, "{} Error - Couldn't get <{}>".format(response.status, wikiUrl))
-                
+
     @commands.command()
     async def ticket (self, ctx, site):
         """
@@ -260,7 +260,7 @@ class Public(commands.Cog):
             await self.utility.send_message(ctx.channel, "Create a ticket here: <{}>".format(TICKET_SITES[site]))
         else:
             await self.utility.send_message(ctx.channel, "Invalid site (acre, ace, arma, cba, cup)")
-    
+
     @commands.command(aliases = ['utc'])
     async def zulu(self, ctx):
         '''Return Zulu (UTC) time'''
@@ -282,7 +282,7 @@ class Public(commands.Cog):
                     unit[1] = unit[1][:-1]
 
                 outUnits.append(unit)
-                    
+
         dtString = ""
         i = 0
         for unit in outUnits:
@@ -303,7 +303,7 @@ class Public(commands.Cog):
         return dtString
 
     #===Listeners===#
-    
+
     @commands.Cog.listener()
     async def on_ready(self):
         self.utility = self.bot.get_cog("Utility")

@@ -1,18 +1,18 @@
 import logging
-import os
 
-from discord import File
 from discord.ext import commands
 
 logger = logging.getLogger('bot')
 
 class Staff(commands.Cog):
+    '''Contains commands usable by any Staff'''
+
     def __init__(self, bot):
         self.bot = bot
         self.utility = self.bot.get_cog("Utility")
 
     #===Commands===#
-    
+
     @commands.command(aliases = ["addrank", "createrank", "createrole"])
     @commands.has_role("Staff")
     async def addrole(self, ctx, *args):
@@ -32,9 +32,9 @@ class Staff(commands.Cog):
     @commands.has_role("Staff")
     async def config(self, ctx):
         """Return or overwrite the config file
-        
+
         Usage:
-            .config 
+            .config
             -- Get current config
             .config <<with attached file called config.ini>>
             -- Overwrites config, a backup is saved"""
@@ -43,14 +43,14 @@ class Staff(commands.Cog):
             await self.utility.getResource(ctx, "config.ini")
         elif ctx.message.attachments[0].filename == "config.ini":
             await self.utility.setResource(ctx)
-    
+
     @commands.command()
     @commands.has_role("Staff")
     async def recruitpost(self, ctx):
         """Return or overwrite the recruitment post
-        
+
         Usage:
-            .recruitpost   
+            .recruitpost
             -- Get current recruit post
             .recruitpost <<with attached file called recruit_post.md>>
             -- Overwrites recruitpost, a backup is saved"""
@@ -59,7 +59,7 @@ class Staff(commands.Cog):
             await self.utility.getResource(ctx, "recruit_post.md")
         elif ctx.message.attachments[0].filename == "recruit_post.md":
             await self.utility.setResource(ctx)
-   
+
     @commands.command(aliases = ["removerank", "deleterank", "deleterole"])
     @commands.has_role("Staff")
     async def removerole(self, ctx, *args):
@@ -82,8 +82,8 @@ class Staff(commands.Cog):
     @commands.has_role("Staff")
     async def renamerole(self, ctx, oldName, newName):
         '''Rename an existing role
-            
-           Usage: 
+
+           Usage:
                 rename "old name" "new name"
         '''
         member = ctx.author
@@ -98,7 +98,7 @@ class Staff(commands.Cog):
                 await self.utility.send_message(ctx.channel, "{} Role **{}** is reserved".format(member.mention, oldName))
         else:
             await self.utility.send_message(ctx.channel, "{} Role **{}** doesn't exist".format(member.mention, oldName))
-         
+
     #===Listeners===#
 
     @commands.Cog.listener()
