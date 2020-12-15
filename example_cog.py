@@ -15,9 +15,9 @@ class CogName(commands.Cog):
     async def command_name(self, ctx, *args):
         ''' Command description
         '''
-        
+
     #===Listeners===#
-    
+
     @commands.Cog.listener()
     async def on_ready(self):
         self.utility = self.bot.get_cog("Utility")
