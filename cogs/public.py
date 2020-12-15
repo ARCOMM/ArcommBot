@@ -29,15 +29,16 @@ EXTRA_TIMEZONES = {
 }
 
 TICKET_SITES = {
-    "acre"      : "https://github.com/IDI-Systems/acre2/issues/new/choose",
-    "ace"       : "https://github.com/acemod/ACE3/issues/new/choose",
-    "cup"       : "https://dev.cup-arma3.org/maniphest/task/edit/form/1/",
-    "cba"       : "https://github.com/CBATeam/CBA_A3/issues/new/choose",
-    "arma"      : "https://feedback.bistudio.com/maniphest/task/edit/form/3/",
-    "arc_misc"  : "https://github.com/ARCOMM/arc_misc/issues/new",
-    "archub"    : "https://github.com/ARCOMM/ARCHUB/issues/new",
-    "tmf"       : "https://github.com/TMF3/TMF/issues/new"
+    "acre":     "https://github.com/IDI-Systems/acre2/issues/new/choose",
+    "ace":      "https://github.com/acemod/ACE3/issues/new/choose",
+    "cup":      "https://dev.cup-arma3.org/maniphest/task/edit/form/1/",
+    "cba":      "https://github.com/CBATeam/CBA_A3/issues/new/choose",
+    "arma":     "https://feedback.bistudio.com/maniphest/task/edit/form/3/",
+    "arc_misc": "https://github.com/ARCOMM/arc_misc/issues/new",
+    "archub":   "https://github.com/ARCOMM/ARCHUB/issues/new",
+    "tmf":      "https://github.com/TMF3/TMF/issues/new"
 }
+
 
 class Public(commands.Cog):
     '''Contains commands that can be used by anyone in the Discord channel'''
@@ -47,7 +48,7 @@ class Public(commands.Cog):
         self.utility = self.bot.get_cog("Utility")
         self.session = aiohttp.ClientSession()
 
-    #===Commands===#
+    # ===Commands=== #
 
     @commands.command(aliases = ['daylightsavings'])
     async def dst(self, ctx):
@@ -73,7 +74,10 @@ class Public(commands.Cog):
             members.sort(key = self.utility.roleListKey)
 
             for member in members:
-                outString += "{} ;{}\n".format(member.nick, member.name) if (member.nick is not None) else "{}\n".format(member.name)
+                if (member.nick is not None):
+                    outString += "{} ;{}\n".format(member.nick, member.name)
+                else:
+                    outString += "{}\n".format(member.name)
 
             await self.utility.send_message(ctx.channel, "```ini\n[ {} ]\n{}```".format(role.name, outString))
         else:
@@ -227,7 +231,8 @@ class Public(commands.Cog):
             if response.status == 200:
                 soup = BeautifulSoup(await response.text(), features = "lxml")
 
-                warnings = soup.find_all("div", {"style": "background-color: #EA0; color: #FFF; display: flex; align-items: center; margin: 0.5em 0"})
+                warnings = soup.find_all("div", {"style": "background-color: #EA0; color: #FFF; display: flex;"
+                                                + " align-items: center; margin: 0.5em 0"})
                 for warning in warnings:
                     warning.decompose()
 
@@ -250,7 +255,7 @@ class Public(commands.Cog):
                 await self.utility.send_message(ctx.channel, "{} Error - Couldn't get <{}>".format(response.status, wikiUrl))
 
     @commands.command()
-    async def ticket (self, ctx, site):
+    async def ticket(self, ctx, site):
         """
         Get a link to create a ticket
         Options: acre, ace, arma, cba, cup, archub, arc_misc, tmf
@@ -270,7 +275,7 @@ class Public(commands.Cog):
 
         await self.utility.send_message(ctx.channel, outString)
 
-    #===Utility===#
+    # ===Utility=== #
 
     def formatDt(self, dt):
         timeUnits = [[dt.days, "days"], [dt.seconds//3600, "hours"], [(dt.seconds//60) % 60, "minutes"]]
@@ -278,7 +283,7 @@ class Public(commands.Cog):
 
         for unit in timeUnits:
             if unit[0] != 0:
-                if unit[0] == 1: # Remove s from end of word if singular
+                if unit[0] == 1:  # Remove s from end of word if singular
                     unit[1] = unit[1][:-1]
 
                 outUnits.append(unit)
@@ -302,12 +307,13 @@ class Public(commands.Cog):
 
         return dtString
 
-    #===Listeners===#
+    # ===Listeners=== #
 
     @commands.Cog.listener()
     async def on_ready(self):
         self.utility = self.bot.get_cog("Utility")
         await self.utility.send_message(self.utility.channels['testing'], "ArcommBot is fully loaded")
+
 
 def setup(bot):
     bot.add_cog(Public(bot))

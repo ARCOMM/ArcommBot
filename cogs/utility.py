@@ -15,6 +15,7 @@ logger = logging.getLogger('bot')
 config = configparser.ConfigParser()
 config.read('resources/config.ini')
 
+
 class Utility(commands.Cog):
     '''Contains useful functions that can be used in any cogs'''
 
@@ -90,7 +91,7 @@ class Utility(commands.Cog):
         return elem.name.lower()
 
     def timeUntil(self, time = "opday", modifier = 0):
-        #logger.debug("timeUntil called with time = {}".format(time))
+        # logger.debug("timeUntil called with time = {}".format(time))
         today = datetime.now(tz = timezone('Europe/London'))
         opday = None
 
@@ -129,7 +130,7 @@ class Utility(commands.Cog):
             else:
                 await self.send_message(ctx.channel, "{} {} not in resources".format(ctx.author.mention, resourceName))
 
-    #===Listeners===#
+    # ===Listeners=== #
 
     @commands.Cog.listener()
     async def on_command(self, ctx):
@@ -150,8 +151,7 @@ class Utility(commands.Cog):
 
             await self.send_message(ctx.channel, "Command **{}** not found, use .help for a list".format(ctx.message.content))
 
-
-        if not ctx.command: 
+        if not ctx.command:
             return
 
         command = ctx.command.name
@@ -191,6 +191,7 @@ class Utility(commands.Cog):
         print("===Bot connected/reconnected===")
         logger.info("===Bot connected/reconnected===")
         self.cog_setup()
+
 
 def setup(bot):
     bot.add_cog(Utility(bot))

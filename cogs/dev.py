@@ -9,21 +9,23 @@ from discord.ext import commands
 
 logger = logging.getLogger('bot')
 
-DEV_IDS = [173123135321800704, 166337116106653696] # Sven, border
+DEV_IDS = [173123135321800704, 166337116106653696]  # Sven, border
+
 
 def is_dev():
     async def predicate(ctx):
         return ctx.author.id in DEV_IDS
     return commands.check(predicate)
 
+
 class Dev(commands.Cog):
     '''Contains commands usable by developers'''
-    
+
     def __init__(self, bot):
         self.bot = bot
         self.utility = self.bot.get_cog("Utility")
 
-    #===Commands===#
+    # ===Commands=== #
 
     @commands.command(name = "logs", hidden = True)
     @is_dev()
@@ -70,7 +72,7 @@ class Dev(commands.Cog):
 
     @commands.command(name = "restart", hidden = True)
     @is_dev()
-    async def _restart(self, ctx) :
+    async def _restart(self, ctx):
         print("============ RESTARTING ============")
         await self.utility.send_message(ctx.channel, "Restarting")
         ArcommBot.restart()
@@ -115,11 +117,12 @@ class Dev(commands.Cog):
         filename = await self._update(ctx)
         await self._reload(ctx, filename)
 
-    #===Listeners===#
+    # ===Listeners=== #
 
     @commands.Cog.listener()
     async def on_ready(self):
         self.utility = self.bot.get_cog("Utility")
+
 
 def setup(bot):
     bot.add_cog(Dev(bot))

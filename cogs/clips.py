@@ -1,12 +1,9 @@
-import asyncio
 from datetime import datetime
 import logging
 import os
 import re
 import sqlite3
 import sys
-import traceback
-import tempfile
 
 from discord.ext import commands
 from discord import File
@@ -34,12 +31,12 @@ def is_dev():
 class ClipsDB():
     def __init__(self):
         self.conn = sqlite3.connect('resources/clips.db')
-        #self.remake()
+        # self.remake()
 
     def remake(self):
         c = self.conn.cursor()
         try:
-            #c.execute("DROP TABLE clips")
+            # c.execute("DROP TABLE clips")
             c.execute("CREATE TABLE clips (link STRING PRIMARY KEY, source STRING NOT NULL, broadcaster STRING NOT NULL, title STRING NOT NULL, view_count INTEGER, duration REAL, video_id INTEGER, date TEXT NOT NULL, time TEXT NOT NULL, type STRING)")
         except Exception as e:
             print(e)
@@ -81,7 +78,7 @@ class Clips(commands.Cog):
         self.clips = ClipsDB()
         self.utility = self.bot.get_cog("Utility")
 
-    #===Commands===#
+    # ===Commands=== #
 
     @commands.command()
     async def clips(self, ctx, *args):

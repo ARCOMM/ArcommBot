@@ -7,11 +7,12 @@ logger = logging.getLogger('bot')
 class Staff(commands.Cog):
     '''Contains commands usable by any Staff'''
 
+
     def __init__(self, bot):
         self.bot = bot
         self.utility = self.bot.get_cog("Utility")
 
-    #===Commands===#
+    # ===Commands=== #
 
     @commands.command(aliases = ["addrank", "createrank", "createrole"])
     @commands.has_role("Staff")
@@ -93,17 +94,19 @@ class Staff(commands.Cog):
             if role != "RESERVED":
                 oldRoleName = str(role.name)
                 await role.edit(name = newName)
-                await self.utility.send_message(ctx.channel, "{} Renamed **{}** to **{}**".format(member.mention, oldRoleName, role.name))
+                await self.utility.send_message(ctx.channel, 
+                                                "{} Renamed **{}** to **{}**".format(member.mention, oldRoleName, role.name))
             else:
                 await self.utility.send_message(ctx.channel, "{} Role **{}** is reserved".format(member.mention, oldName))
         else:
             await self.utility.send_message(ctx.channel, "{} Role **{}** doesn't exist".format(member.mention, oldName))
 
-    #===Listeners===#
+    # ===Listeners=== #
 
     @commands.Cog.listener()
     async def on_ready(self):
         self.utility = self.bot.get_cog("Utility")
+
 
 def setup(bot):
     bot.add_cog(Staff(bot))
