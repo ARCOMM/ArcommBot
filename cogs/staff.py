@@ -4,9 +4,9 @@ from discord.ext import commands
 
 logger = logging.getLogger('bot')
 
+
 class Staff(commands.Cog):
     '''Contains commands usable by any Staff'''
-
 
     def __init__(self, bot):
         self.bot = bot
@@ -94,7 +94,7 @@ class Staff(commands.Cog):
             if role != "RESERVED":
                 oldRoleName = str(role.name)
                 await role.edit(name = newName)
-                await self.utility.send_message(ctx.channel, 
+                await self.utility.send_message(ctx.channel,
                                                 "{} Renamed **{}** to **{}**".format(member.mention, oldRoleName, role.name))
             else:
                 await self.utility.send_message(ctx.channel, "{} Role **{}** is reserved".format(member.mention, oldName))

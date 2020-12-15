@@ -14,29 +14,29 @@ config = configparser.ConfigParser()
 config.read('resources/config.ini')
 
 EXTRA_TIMEZONES = {
-    "PT" : "America/Los_Angeles",
+    "PT": "America/Los_Angeles",
     "PST": "ETC/GMT+8",
     "PDT": "ETC/GMT+7",
-    "MT" : "America/Denver",
+    "MT": "America/Denver",
     "MST": "ETC/GMT+7",
     "MDT": "ETC/GMT+6",
-    "CT" : "America/Chicago",
+    "CT": "America/Chicago",
     "CST": "ETC/GMT+6",
     "CDT": "ETC/GMT+5",
-    "ET" : "America/New_York",
+    "ET": "America/New_York",
     "EST": "ETC/GMT+5",
     "EDT": "ETC/GMT+4"
 }
 
 TICKET_SITES = {
-    "acre":     "https://github.com/IDI-Systems/acre2/issues/new/choose",
-    "ace":      "https://github.com/acemod/ACE3/issues/new/choose",
-    "cup":      "https://dev.cup-arma3.org/maniphest/task/edit/form/1/",
-    "cba":      "https://github.com/CBATeam/CBA_A3/issues/new/choose",
-    "arma":     "https://feedback.bistudio.com/maniphest/task/edit/form/3/",
+    "acre": "https://github.com/IDI-Systems/acre2/issues/new/choose",
+    "ace": "https://github.com/acemod/ACE3/issues/new/choose",
+    "cup": "https://dev.cup-arma3.org/maniphest/task/edit/form/1/",
+    "cba": "https://github.com/CBATeam/CBA_A3/issues/new/choose",
+    "arma": "https://feedback.bistudio.com/maniphest/task/edit/form/3/",
     "arc_misc": "https://github.com/ARCOMM/arc_misc/issues/new",
-    "archub":   "https://github.com/ARCOMM/ARCHUB/issues/new",
-    "tmf":      "https://github.com/TMF3/TMF/issues/new"
+    "archub": "https://github.com/ARCOMM/ARCHUB/issues/new",
+    "tmf": "https://github.com/TMF3/TMF/issues/new"
 }
 
 
@@ -231,8 +231,8 @@ class Public(commands.Cog):
             if response.status == 200:
                 soup = BeautifulSoup(await response.text(), features = "lxml")
 
-                warnings = soup.find_all("div", {"style": "background-color: #EA0; color: #FFF; display: flex;"
-                                                + " align-items: center; margin: 0.5em 0"})
+                warnings = soup.find_all("div", {"style": "background-color: #EA0; color: #FFF; display: flex;" + 
+                                                 " align-items: center; margin: 0.5em 0"})
                 for warning in warnings:
                     warning.decompose()
 
@@ -243,7 +243,7 @@ class Public(commands.Cog):
                 elems = [desc, syntax, ret]
                 outString = ""
                 for elem in elems:
-                    if elem != None:
+                    if elem is not None:
                         elemContent = elem.findNext('dd').text
                         outString += "# {}\n{}\n\n".format(elem.text, elemContent.lstrip().rstrip())
 
@@ -278,7 +278,7 @@ class Public(commands.Cog):
     # ===Utility=== #
 
     def formatDt(self, dt):
-        timeUnits = [[dt.days, "days"], [dt.seconds//3600, "hours"], [(dt.seconds//60) % 60, "minutes"]]
+        timeUnits = [[dt.days, "days"], [dt.seconds // 3600, "hours"], [(dt.seconds // 60) % 60, "minutes"]]
         outUnits = []
 
         for unit in timeUnits:

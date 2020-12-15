@@ -63,7 +63,7 @@ class CalendarDB():
 
         for item in response['items']:
             try:
-                c.execute("INSERT OR IGNORE INTO calendar (summary, start, end) VALUES(?, ?, ?)", (item['summary'], 
+                c.execute("INSERT OR IGNORE INTO calendar (summary, start, end) VALUES(?, ?, ?)", (item['summary'],
                           item['start']['dateTime'], item['end']['dateTime']))
             except Exception:
                 None
@@ -267,7 +267,7 @@ class Tasking(commands.Cog):
                     return
 
         outString = "{}\n```md\n# {}\n\nStarting in {}\n\nStart: {} UTC\nEnd:   {} UTC```".format(ping, summary, timeUntilStr,
-                    startTimeString, endTimeString)
+                        startTimeString, endTimeString)
         await self.utility.send_message(channel, outString)
 
         await asyncio.sleep((timeUntil - timedelta(minutes = 5)).seconds)
@@ -383,8 +383,8 @@ class Tasking(commands.Cog):
 
                     changelogUrl = "https://github.com/{}/releases/tag/{}".format(config['github'][mod], response['tag_name'])
                     updatePost += "**{}** has released a new version ({})\n<{}>\n".format(mod, response['tag_name'],
-                                  changelogUrl)
-                elif response.status == 304: # Repo hasn't been updated
+                                    changelogUrl)
+                elif response.status == 304:  # Repo hasn't been updated
                     None
                     # logger.info("Response 304 - Not Changed: {}".format(mod))
                 else:
@@ -474,7 +474,7 @@ class Tasking(commands.Cog):
                             lastModified['steam'][modName] = timeUpdated
 
                             updatePost += "**{}** has released a new version ({})\n{}\n".format(modName, "",
-                                          "<https://steamcommunity.com/sharedfiles/filedetails/changelog/{}>".format(mod['publishedfileid']))
+                                            "<https://steamcommunity.com/sharedfiles/filedetails/changelog/{}>".format(mod['publishedfileid']))
                             updatePost += "```\n{}```\n".format(await self.getSteamChangelog(mod['publishedfileid']))
                     else:
                         logger.info("Mod '{}' added to lastModified".format(modName))
