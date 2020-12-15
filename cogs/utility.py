@@ -86,10 +86,9 @@ class Utility(commands.Cog):
         return None
 
     @staticmethod
-    def roleListKey(self, elem):
+    def roleListKey(elem):
         return elem.name.lower()
 
-    @staticmethod
     def timeUntil(self, time = "opday", modifier = 0):
         #logger.debug("timeUntil called with time = {}".format(time))
         today = datetime.now(tz = timezone('Europe/London'))

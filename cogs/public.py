@@ -65,7 +65,7 @@ class Public(commands.Cog):
         '''
 
         roleQuery = " ".join(args)
-        role = self.utility.searchRoles(ctx, roleQuery, reserved = True, censorReserved = False)
+        role = self.utility.searchRoles(ctx, roleQuery, autocomplete = True, reserved = True, censorReserved = False)
 
         if role:
             outString = ""
