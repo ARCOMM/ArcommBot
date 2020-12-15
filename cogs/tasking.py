@@ -62,7 +62,7 @@ class CalendarDB():
         for item in response['items']:
             try:
                 c.execute("INSERT OR IGNORE INTO calendar (summary, start, end) VALUES(?, ?, ?)", (item['summary'], item['start']['dateTime'], item['end']['dateTime']))
-            except Exception as e:
+            except Exception:
                 None
 
         self.conn.commit()
@@ -73,12 +73,14 @@ class CalendarDB():
         c.execute("SELECT * FROM calendar ORDER BY event_id ASC LIMIT 1")
         event = c.fetchone()
         c.execute("DELETE FROM calendar WHERE event_id = (SELECT min(event_id) FROM calendar)")
-        
+
         self.conn.commit()
-        
+
         return event
 
 class Tasking(commands.Cog):
+    '''Contains scheduled tasks'''
+
     def __init__(self, bot):
         self.bot = bot
         self.utility = self.bot.get_cog("Utility")
@@ -108,18 +110,18 @@ class Tasking(commands.Cog):
         now = datetime.utcnow()
         #now = datetime(now.year, now.month, now.day, 16, 59, 55)
         future = datetime(now.year, now.month, now.day, now.hour + 1)
-        logger.debug("{} seconds until attendanceTask called".format((future - now).seconds))
+        logger.debug("%d seconds until attendanceTask called", (future - now).seconds)
 
         await asyncio.sleep((future - now).seconds)
-    
+
     @tasks.loop(minutes = 1)
     async def calendarTask(self):
         try:
             lastDatetime = None
             with open('resources/calendar_datetime.json', 'r') as f:
                 lastDatetime = json.load(f)
-                
-                if not ('datetime' in lastDatetime):
+
+                if not 'datetime' in lastDatetime:
                     lastDatetime['datetime'] = "now"
                 else:   #Make sure the lastDatetime isn't in the past, otherwise will be announcing old events
                     if lastDatetime['datetime'] != "now":
@@ -146,7 +148,7 @@ class Tasking(commands.Cog):
                     if timeUntil <= timedelta(days = 0, hours = 1, minutes = 0) and timeUntil >= timedelta(days = 0, hours = 0, minutes = 10):
                         newAnnouncement = True
                         lastDatetime['datetime'] = event[3]
-                        newTask = asyncio.Task(self.announce(timeUntil, event[1], event[2], event[3]))
+                        asyncio.Task(self.announce(timeUntil, event[1], event[2], event[3]))
                 else:
                     logger.debug('No event popped')
                     break
@@ -170,9 +172,9 @@ class Tasking(commands.Cog):
                 outString = "<@&{}>\n{}{}{}".format(self.utility.roles['admin'], githubPost, cupPost, steamPost)
                 await self.utility.send_message(self.utility.channels['staff'], outString)
 
-        except Exception as e:
+        except Exception:
             logger.error(traceback.format_exc())
-    
+
     @tasks.loop(minutes = 10)
     async def a3syncTask(self):
         try:
@@ -180,9 +182,9 @@ class Tasking(commands.Cog):
             if a3syncChanged:
                 await self.utility.send_message(self.utility.channels['announcements'], a3syncPost)
 
-        except Exception as e:
+        except Exception:
             logger.error(traceback.format_exc())
-    
+
     @tasks.loop(hours = 24)
     async def recruitTask(self):
         logger.debug("recruitTask called")
@@ -202,7 +204,7 @@ class Tasking(commands.Cog):
 
         targetHour = 17
         targetMinute = 0
-        
+
         now = datetime.utcnow()
         #now = datetime(now.year, now.month, now.day, 16, 59, 55)
         future = datetime(now.year, now.month, now.day, targetHour, targetMinute, 0, 0)
@@ -211,19 +213,19 @@ class Tasking(commands.Cog):
             logger.debug("Missed timeslot, adding a day")
             future += timedelta(days = 1)
 
-        logger.debug("{} seconds until recruitTask called".format((future - now).seconds))
+        logger.debug("%d seconds until recruitTask called", (future - now).seconds)
 
         await asyncio.sleep((future - now).seconds)
-    
+
     @tasks.loop(minutes = 1)
     async def presenceTask(self):
         timeLeft = self.utility.timeUntil("optime")
         minutes = (timeLeft.seconds // 60) % 60
         minuteZero = "0" if minutes < 10 else ""
         presenceString = "{}:{}{}:00 until optime".format(timeLeft.seconds // 3600, minuteZero, minutes)
-            
+
         await self.bot.change_presence(activity = Game(name = presenceString))
-    
+
     @presenceTask.before_loop
     async def before_presenceTask(self):
         """Sync up presenceTask to on the minute"""
@@ -233,10 +235,10 @@ class Tasking(commands.Cog):
         now = datetime.utcnow()
         #now = datetime(now.year, now.month, now.day, 16, 59, 55)
         future = datetime(now.year, now.month, now.day, now.hour, now.minute + 1)
-        logger.debug("{} seconds until presenceTask called".format((future - now).seconds))
+        logger.debug("%d seconds until presenceTask called", (future - now).seconds)
 
         await asyncio.sleep((future - now).seconds)
-    
+
     #===Utility===#
 
     async def announce(self, timeUntil, summary, startTime, endTime):
@@ -252,7 +254,7 @@ class Tasking(commands.Cog):
         channel = self.utility.channels['op_news']
 
         for event in config['calendar']:
-            if re.search(event, summary.lower()) != None:
+            if re.search(event, summary.lower()) is not None:
                 eventArray = config['calendar'][event][1:-1].split(", ")
                 if eventArray[0] != "ignored":
                     ping = "<@&{}>".format(self.utility.roles[eventArray[0]])
@@ -273,16 +275,16 @@ class Tasking(commands.Cog):
 
         outString = "<@&{}> Collect attendance!".format(self.utility.roles['admin'])
         await self.utility.send_message(self.utility.channels['admin'], outString)
-            
+
     async def recruitmentPost(self, channel, pingAdmins = False):
         logger.debug("recruitmentPost called")
         if pingAdmins:
             introString = "<@&{}> Post recruitment on <https://www.reddit.com/r/FindAUnit>".format(self.utility.roles['admin'])
         else:
             introString = "Post recruitment on <https://www.reddit.com/r/FindAUnit>"
-        
+
         await channel.send(introString, file = File("resources/recruit_post.md", filename = "recruit_post.md"))
-    
+
     async def handleA3Sync(self):
         lastModified = {}
         with open('resources/last_modified.json', 'r') as f:
@@ -343,7 +345,7 @@ class Tasking(commands.Cog):
         logger.debug(lastModified)
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
-        
+
         return repoChanged, updatePost
 
     async def handleGithub(self):
@@ -373,7 +375,7 @@ class Tasking(commands.Cog):
 
                     lastModified['github'][mod] = response.headers['Last-Modified']
                     response = await response.json()
-                    
+
                     changelogUrl = "https://github.com/{}/releases/tag/{}".format(config['github'][mod], response['tag_name'])
                     updatePost += "**{}** has released a new version ({})\n<{}>\n".format(mod, response['tag_name'], changelogUrl)
                 elif response.status == 304: #Repo hasn't been updated
@@ -381,12 +383,12 @@ class Tasking(commands.Cog):
                     #logger.info("Response 304 - Not Changed: {}".format(mod))
                 else:
                     logger.warning("{} GET error: {} {} - {}".format(mod, response.status, response.reason, await response.text()))
-                
+
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
 
         return repoChanged, updatePost
-    
+
     async def handleCup(self):
         logger.debug("handleCup called")
 
@@ -407,7 +409,7 @@ class Tasking(commands.Cog):
                     modName = header.text
                     modVersion = header.parent.findNext("p").text
                     modVersion = modVersion.split()[0]
-                        
+
                     if modName in lastModified['cup']:
                         if modVersion != lastModified['cup'][modName]:
                             logger.info("Mod '{}' has been updated".format(modName))
@@ -421,12 +423,12 @@ class Tasking(commands.Cog):
                         lastModified['cup'][modName] = modVersion
             else:
                 logger.warning("cup GET error: {} {} - {}".format(response.status, response.reason, await response.text()))
-        
+
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
 
         return repoChanged, updatePost
-    
+
     async def handleSteam(self):
         logger.debug("handleSteam called")
         steamUrl = 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' # https://partner.steamgames.com/doc/webapi/ISteamRemoteStorage
@@ -440,7 +442,7 @@ class Tasking(commands.Cog):
         i = 0
         for modId in config['steam']:
             data["publishedfileids[{}]".format(str(i))] = config['steam'][modId]
-            i += 1    
+            i += 1
 
         updatePost = ""
         repoChanged = False
@@ -469,12 +471,12 @@ class Tasking(commands.Cog):
                         lastModified['steam'][modName] = timeUpdated
             else:
                 logger.warning("steam POST error: {} {} - {}".format(response.status, response.reason, await response.text()))
-            
+
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
 
         return repoChanged, updatePost
-    
+
     async def getSteamChangelog(self, modId):
         steamUrl = "https://steamcommunity.com/sharedfiles/filedetails/changelog/{}".format(modId)
 
@@ -497,7 +499,7 @@ class Tasking(commands.Cog):
                             parseChangelog=False, parseSync=False)
 
         return round((int(x["serverinfo"]["SERVER_INFO"]["totalFilesSize"]) / 1000000000), 2) # Bytes to GB
-    
+
     #===Listeners===#
 
     def cog_unload(self):
@@ -516,7 +518,7 @@ class Tasking(commands.Cog):
 
         self.calendar.remake()
         self.calendar.storeCalendar()
-        
+
         self.calendarTask.start()
         self.attendanceTask.start()
         self.modcheckTask.start()
