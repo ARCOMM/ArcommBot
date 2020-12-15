@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-import string
 import sys
 import ArcommBot
 
@@ -10,19 +9,23 @@ from discord.ext import commands
 
 logger = logging.getLogger('bot')
 
-DEV_IDS = [173123135321800704, 166337116106653696] # Sven, border
+DEV_IDS = [173123135321800704, 166337116106653696]  # Sven, border
+
 
 def is_dev():
     async def predicate(ctx):
         return ctx.author.id in DEV_IDS
     return commands.check(predicate)
 
+
 class Dev(commands.Cog):
+    '''Contains commands usable by developers'''
+
     def __init__(self, bot):
         self.bot = bot
         self.utility = self.bot.get_cog("Utility")
 
-    #===Commands===#
+    # ===Commands=== #
 
     @commands.command(name = "logs", hidden = True)
     @is_dev()
@@ -36,14 +39,14 @@ class Dev(commands.Cog):
         # For some ungodly reason this only works if bot.log is sent at the end
         if logName == "bot":
             await ctx.channel.send("bot.log", file = File("logs/bot.log", filename = "bot.log"))
-    
+
     @commands.command(name = "load", hidden = True)
     @is_dev()
     async def _load(self, ctx, ext: str):
         self.bot.load_extension("cogs." + ext)
-        logger.info("=========Loaded {} extension=========".format(ext))
+        logger.info("=========Loaded %s extension=========", ext)
         await self.utility.send_message(ctx.channel, "Loaded {} extension".format(ext))
-    
+
     @commands.command(name = "resources", hidden = True)
     @is_dev()
     async def _resources(self, ctx):
@@ -59,25 +62,25 @@ class Dev(commands.Cog):
     @is_dev()
     async def _setres(self, ctx):
         await self.utility.setResource(ctx)
-            
+
     @commands.command(name = "reload", hidden = True)
     @is_dev()
     async def _reload(self, ctx, ext: str):
         self.bot.reload_extension("cogs." + ext)
-        logger.info("=========Reloaded {} extension=========".format(ext))
+        logger.info("=========Reloaded %s extension=========", ext)
         await self.utility.send_message(ctx.channel, "Reloaded {} extension".format(ext))
 
-    @commands.command(name = "restart", hidden = True) 
+    @commands.command(name = "restart", hidden = True)
     @is_dev()
-    async def _restart(self, ctx) :
+    async def _restart(self, ctx):
         print("============ RESTARTING ============")
         await self.utility.send_message(ctx.channel, "Restarting")
         ArcommBot.restart()
 
     @commands.command(name = "shutdown", hidden = True)
     @is_dev()
-    async def _shutdown(self, ctx):
-        exit()
+    async def _shutdown(self):
+        sys.exit()
 
     @commands.command(name = "update", hidden = True)
     @is_dev()
@@ -99,12 +102,12 @@ class Dev(commands.Cog):
                 logger.debug("Replacing cog file")
                 os.replace(tempFilename, "cogs/{}".format(newCog.filename))
 
-                logger.info("{} successfully updated".format(newCog.filename))
+                logger.info("%s successfully updated", newCog.filename)
                 await self.utility.send_message(ctx.channel, "{} successfully updated".format(newCog.filename))
 
                 return newCog.filename.split(".")[0]
-            else:
-                logger.debug("Filename not in cogs")
+
+            logger.debug("Filename not in cogs")
         else:
             logger.debug("Found no attachment")
 
@@ -114,11 +117,12 @@ class Dev(commands.Cog):
         filename = await self._update(ctx)
         await self._reload(ctx, filename)
 
-    #===Listeners===# 
-    
+    # ===Listeners=== #
+
     @commands.Cog.listener()
     async def on_ready(self):
         self.utility = self.bot.get_cog("Utility")
+
 
 def setup(bot):
     bot.add_cog(Dev(bot))
