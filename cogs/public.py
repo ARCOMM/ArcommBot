@@ -257,14 +257,14 @@ class Public(commands.Cog):
     @commands.command()
     async def ticket(self, ctx, site):
         """
-        Get a link to create a ticket
+        Get a link to create a Github ticket
         Options: acre, ace, arma, cba, cup, archub, arc_misc, tmf
         """
         site = site.lower()
         if site in TICKET_SITES:
             await self.utility.send_message(ctx.channel, "Create a ticket here: <{}>".format(TICKET_SITES[site]))
         else:
-            await self.utility.send_message(ctx.channel, "Invalid site (acre, ace, arma, cba, cup)")
+            await self.utility.send_message(ctx.channel, "Invalid site ({})".format(", ".join(TICKET_SITES)))
 
     @commands.command(aliases = ['utc'])
     async def zulu(self, ctx):
