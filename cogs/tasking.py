@@ -36,8 +36,6 @@ class CalendarDB():
     def __init__(self):
         self.conn = sqlite3.connect('resources/calendar.db')
         self.collection = service.events()
-        # self.remake()
-        # self.storeCalendar()
 
     def remake(self):
         c = self.conn.cursor()
@@ -174,7 +172,6 @@ class Tasking(commands.Cog):
             outString = "<@&{}>\n{}{}{}".format(self.utility.roles['admin'], githubPost, cupPost, steamPost)
             await self.utility.send_message(self.utility.channels['staff'], outString)
 
-
     @tasks.loop(minutes = 10)
     async def a3syncTask(self):
         a3syncChanged, a3syncPost = await self.handleA3Sync()
@@ -259,7 +256,7 @@ class Tasking(commands.Cog):
                     return
 
         outString = "{}\n```md\n# {}\n\nStarting in {}\n\nStart: {} UTC\nEnd:   {} UTC```".format(ping, summary, timeUntilStr,
-                        startTimeString, endTimeString)
+                                                                                                  startTimeString, endTimeString)
         await self.utility.send_message(channel, outString)
 
         await asyncio.sleep((timeUntil - timedelta(minutes = 5)).seconds)
@@ -375,11 +372,11 @@ class Tasking(commands.Cog):
 
                     changelogUrl = "https://github.com/{}/releases/tag/{}".format(config['github'][mod], response['tag_name'])
                     updatePost += "**{}** has released a new version ({})\n<{}>\n".format(mod, response['tag_name'],
-                                    changelogUrl)
+                                                                                          changelogUrl)
                 else:
-                    if response.status != 304: # 304 = repo not updated
+                    if response.status != 304:  # 304 = repo not updated
                         logger.warning("%s GET error: %s %s - %s", mod, response.status, response.reason,
-                                        await response.text())
+                                       await response.text())
 
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)

@@ -171,7 +171,8 @@ class Public(commands.Cog):
         url = "{}.a3s/".format(self.utility.REPO_URL)
         scheme = urlparse(url).scheme.capitalize
 
-        repo = repository.parse(url, scheme, parseAutoconf=False, parseServerinfo=True, parseEvents=False, parseChangelog=False, parseSync=True)
+        repo = repository.parse(url, scheme, parseAutoconf=False, parseServerinfo=True, parseEvents=False,
+                                parseChangelog=False, parseSync=True)
         mods = []
         modString = []
         longestModSize = 0
@@ -263,8 +264,8 @@ class Public(commands.Cog):
             if response.status == 200:
                 soup = BeautifulSoup(await response.text(), features = "lxml")
 
-                warnings = soup.find_all("div", {"style": "background-color: #EA0; color: #FFF; display: flex;" +
-                                                 " align-items: center; margin: 0.5em 0"})
+                warnings = soup.find_all("div", {"style": "background-color: #EA0; color: #FFF; display: flex;"
+                                                + " align-items: center; margin: 0.5em 0"})
                 for warning in warnings:
                     warning.decompose()
 
