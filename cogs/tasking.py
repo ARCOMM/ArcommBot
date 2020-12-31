@@ -6,7 +6,6 @@ import logging
 import os
 import re
 import sqlite3
-import traceback
 from urllib.parse import urlparse
 
 import aiohttp
@@ -95,6 +94,8 @@ class Tasking(commands.Cog):
 
     @tasks.loop(hours = 1)
     async def attendanceTask(self):
+        '''Remind admins to take attendance on opday'''
+
         logger.debug("attendanceTask called")
         targetTimeslot = [17, 20]  # 5pm -> 8pm
 
@@ -120,74 +121,65 @@ class Tasking(commands.Cog):
 
     @tasks.loop(minutes = 1)
     async def calendarTask(self):
-        try:
-            lastDatetime = None
-            with open('resources/calendar_datetime.json', 'r') as f:
-                lastDatetime = json.load(f)
+        '''Check google calendar for any new events, and post announcements for them'''
 
-                if 'datetime' not in lastDatetime:
-                    lastDatetime['datetime'] = "now"
-                else:  # Make sure the lastDatetime isn't in the past, otherwise will be announcing old events
-                    if lastDatetime['datetime'] != "now":
-                        now = datetime.now(tz = timezone("UTC"))
-                        lastDT = lastDatetime['datetime'].replace("Z", "+00:00")
-                        lastDT = datetime.strptime(lastDT, "%Y-%m-%dT%H:%M:%S%z")
+        lastDatetime = None
+        with open('resources/calendar_datetime.json', 'r') as f:
+            lastDatetime = json.load(f)
 
-                        if lastDT < now:
-                            lastDatetime['datetime'] = "now"
-
-            self.calendar.storeCalendar(lastDatetime['datetime'])
-            newAnnouncement = True
-
-            while newAnnouncement:
-                newAnnouncement = False
-                event = self.calendar.pop()
-
-                if event:
+            if 'datetime' not in lastDatetime:
+                lastDatetime['datetime'] = "now"
+            else:  # Make sure the lastDatetime isn't in the past, otherwise will be announcing old events
+                if lastDatetime['datetime'] != "now":
                     now = datetime.now(tz = timezone("UTC"))
-                    eventStartTime = event[2].replace("Z", "+00:00")
-                    eventStartTime = datetime.strptime(eventStartTime, "%Y-%m-%dT%H:%M:%S%z")
+                    lastDT = lastDatetime['datetime'].replace("Z", "+00:00")
+                    lastDT = datetime.strptime(lastDT, "%Y-%m-%dT%H:%M:%S%z")
 
-                    timeUntil = eventStartTime - now
-                    if timeUntil <= timedelta(days = 0, hours = 1, minutes = 0) and timeUntil >= timedelta(days = 0, hours = 0, minutes = 10):
-                        newAnnouncement = True
-                        lastDatetime['datetime'] = event[3]
-                        asyncio.Task(self.announce(timeUntil, event[1], event[2], event[3]))
-                else:
-                    logger.debug('No event popped')
-                    break
+                    if lastDT < now:
+                        lastDatetime['datetime'] = "now"
 
-            with open('resources/calendar_datetime.json', 'w') as f:
-                json.dump(lastDatetime, f)
+        self.calendar.storeCalendar(lastDatetime['datetime'])
+        newAnnouncement = True
 
-        except Exception as e:
-            logger.warning(e)
+        while newAnnouncement:
+            newAnnouncement = False
+            event = self.calendar.pop()
+
+            if event:
+                now = datetime.now(tz = timezone("UTC"))
+                eventStartTime = event[2].replace("Z", "+00:00")
+                eventStartTime = datetime.strptime(eventStartTime, "%Y-%m-%dT%H:%M:%S%z")
+
+                timeUntil = eventStartTime - now
+                if timedelta(days = 0, hours = 0, minutes = 10) <= timeUntil <= timedelta(days = 0, hours = 1, minutes = 0):
+                    newAnnouncement = True
+                    lastDatetime['datetime'] = event[3]
+                    asyncio.Task(self.announce(timeUntil, event[1], event[2], event[3]))
+            else:
+                logger.debug('No event popped')
+                break
+
+        with open('resources/calendar_datetime.json', 'w') as f:
+            json.dump(lastDatetime, f)
 
     @tasks.loop(hours = 1)
     async def modcheckTask(self):
         logger.debug("modcheckTask called")
 
-        try:
-            githubChanged, githubPost = await self.handleGithub()
-            cupChanged, cupPost = await self.handleCup()
-            steamChanged, steamPost = await self.handleSteam()
+        githubChanged, githubPost = await self.handleGithub()
+        cupChanged, cupPost = await self.handleCup()
+        steamChanged, steamPost = await self.handleSteam()
 
-            if githubChanged or cupChanged or steamChanged:
-                outString = "<@&{}>\n{}{}{}".format(self.utility.roles['admin'], githubPost, cupPost, steamPost)
-                await self.utility.send_message(self.utility.channels['staff'], outString)
+        if githubChanged or cupChanged or steamChanged:
+            outString = "<@&{}>\n{}{}{}".format(self.utility.roles['admin'], githubPost, cupPost, steamPost)
+            await self.utility.send_message(self.utility.channels['staff'], outString)
 
-        except Exception:
-            logger.error(traceback.format_exc())
 
     @tasks.loop(minutes = 10)
     async def a3syncTask(self):
-        try:
-            a3syncChanged, a3syncPost = await self.handleA3Sync()
-            if a3syncChanged:
-                await self.utility.send_message(self.utility.channels['announcements'], a3syncPost)
-
-        except Exception:
-            logger.error(traceback.format_exc())
+        a3syncChanged, a3syncPost = await self.handleA3Sync()
+        if a3syncChanged:
+            await self.utility.send_message(self.utility.channels['announcements'], a3syncPost)
 
     @tasks.loop(hours = 24)
     async def recruitTask(self):
@@ -297,7 +289,7 @@ class Tasking(commands.Cog):
 
         repoChanged = False
         updatePost = ""
-        deleted, added, updated = [mod for mod in lastModified['a3sync']], [], []
+        deleted, added, updated = list(lastModified['a3sync']), [], []
 
         async with self.session.get(self.utility.REPO_URL) as response:
             if response.status == 200:
@@ -313,7 +305,7 @@ class Tasking(commands.Cog):
                         deleted.remove(mod)
 
                         if updateDatetime != lastModified['a3sync'][mod]:
-                            logger.debug("{} updated ({}, {})".format(mod, lastModified['a3sync'][mod], updateDatetime))
+                            logger.debug("%s updated (%s, %s)", mod, lastModified['a3sync'][mod], updateDatetime)
                             repoChanged = True
                             lastModified['a3sync'][mod] = updateDatetime
                             logger.debug("lastModified:")
@@ -321,13 +313,13 @@ class Tasking(commands.Cog):
                             updated.append(mod)
                             logger.debug(updated)
                     else:
-                        logger.debug("{} added ({})".format(mod, lastModified['a3sync'][mod]))
+                        logger.debug("%s added (%s)", mod, lastModified['a3sync'][mod])
                         repoChanged = True
                         lastModified['a3sync'][mod] = updateDatetime
 
                         added.append(mod)
             else:
-                logger.debug("REPO GET error: {} {} - {}".format(response.status, response.reason, await response.text()))
+                logger.debug("REPO GET error: %s %s - %s", response.status, response.reason, await response.text())
 
         newRepoSize = self.getA3SyncRepoSize()
         repoSizeChange = round(newRepoSize - float(lastModified['a3sync_size']), 2)
@@ -343,7 +335,7 @@ class Tasking(commands.Cog):
 
         lastModified['a3sync_size'] = newRepoSize
         for mod in deleted:
-            logger.debug("{} deleted".format(mod))
+            logger.debug("%s deleted", mod)
             del lastModified['a3sync'][mod]
 
         logger.debug("Final lastModified")
@@ -375,7 +367,7 @@ class Tasking(commands.Cog):
 
             async with self.session.get(url, headers = headers) as response:
                 if response.status == 200:  # Repo has been updated
-                    logger.info("Response 200 Success: {}".format(mod))
+                    logger.info("Response 200 Success: %s", mod)
                     repoChanged = True
 
                     lastModified['github'][mod] = response.headers['Last-Modified']
@@ -384,12 +376,10 @@ class Tasking(commands.Cog):
                     changelogUrl = "https://github.com/{}/releases/tag/{}".format(config['github'][mod], response['tag_name'])
                     updatePost += "**{}** has released a new version ({})\n<{}>\n".format(mod, response['tag_name'],
                                     changelogUrl)
-                elif response.status == 304:  # Repo hasn't been updated
-                    None
-                    # logger.info("Response 304 - Not Changed: {}".format(mod))
                 else:
-                    logger.warning("{} GET error: {} {} - {}".format(mod, response.status, response.reason,
-                                   await response.text()))
+                    if response.status != 304: # 304 = repo not updated
+                        logger.warning("%s GET error: %s %s - %s", mod, response.status, response.reason,
+                                        await response.text())
 
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
@@ -419,17 +409,17 @@ class Tasking(commands.Cog):
 
                     if modName in lastModified['cup']:
                         if modVersion != lastModified['cup'][modName]:
-                            logger.info("Mod '{}' has been updated".format(modName))
+                            logger.info("Mod '%s' has been updated", modName)
 
                             repoChanged = True
                             lastModified['cup'][modName] = modVersion
 
                             updatePost += "**{}** has released a new version ({})\n".format(modName, modVersion)
                     else:
-                        logger.debug("Mod '{}' not in lastModified".format(modName))
+                        logger.debug("Mod '%s' not in lastModified", modName)
                         lastModified['cup'][modName] = modVersion
             else:
-                logger.warning("cup GET error: {} {} - {}".format(response.status, response.reason, await response.text()))
+                logger.warning("cup GET error: %s %s - %s", response.status, response.reason, await response.text())
 
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
@@ -468,7 +458,7 @@ class Tasking(commands.Cog):
 
                     if modName in lastModified['steam']:
                         if timeUpdated != lastModified['steam'][modName]:
-                            logger.info("Mod '{}' has been updated".format(modName))
+                            logger.info("Mod '%s' has been updated", modName)
 
                             repoChanged = True
                             lastModified['steam'][modName] = timeUpdated
@@ -477,10 +467,10 @@ class Tasking(commands.Cog):
                                             "<https://steamcommunity.com/sharedfiles/filedetails/changelog/{}>".format(mod['publishedfileid']))
                             updatePost += "```\n{}```\n".format(await self.getSteamChangelog(mod['publishedfileid']))
                     else:
-                        logger.info("Mod '{}' added to lastModified".format(modName))
+                        logger.info("Mod '%s' added to lastModified", modName)
                         lastModified['steam'][modName] = timeUpdated
             else:
-                logger.warning("steam POST error: {} {} - {}".format(response.status, response.reason, await response.text()))
+                logger.warning("steam POST error: %s %s - %s", response.status, response.reason, await response.text())
 
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
@@ -495,8 +485,7 @@ class Tasking(commands.Cog):
                 soup = BeautifulSoup(await response.text(), features = "lxml")
                 headline = soup.find("div", {"class": "changelog headline"})
                 return headline.findNext("p").get_text(separator = "\n")
-            else:
-                print("steam GET error: {} {} - {}".format(response.status, response.reason, await response.text()))
+            print("steam GET error: {} {} - {}".format(response.status, response.reason, await response.text()))
 
         return ""
 
@@ -520,7 +509,7 @@ class Tasking(commands.Cog):
         self.recruitTask.cancel()
         self.presenceTask.cancel()
         self.a3syncTask.cancel()
-        logger.warning("Tasks cancelled at {}".format(datetime.now()))
+        logger.warning("Tasks cancelled at %s", datetime.now())
 
     @commands.Cog.listener()
     async def on_ready(self):

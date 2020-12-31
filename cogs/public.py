@@ -169,8 +169,7 @@ class Public(commands.Cog):
     @commands.command()
     async def repo(self, ctx):
         url = "{}.a3s/".format(self.utility.REPO_URL)
-        parsed_url = urlparse(url)
-        scheme = parsed_url.scheme.capitalize
+        scheme = urlparse(url).scheme.capitalize
 
         repo = repository.parse(url, scheme, parseAutoconf=False, parseServerinfo=True, parseEvents=False, parseChangelog=False, parseSync=True)
         mods = []
@@ -179,8 +178,7 @@ class Public(commands.Cog):
 
         for mod in repo["sync"]["children"]:
             modSize = self.getModSizeString(mod)
-            modName = mod["name"][1:]
-            mods.append([modSize, modName])
+            mods.append([modSize, mod["name"][1:]])
 
             if len(modSize) > longestModSize:
                 longestModSize = len(modSize)
