@@ -299,7 +299,7 @@ class Tasking(commands.Cog):
         updatePost = ""
         deleted, added, updated = [mod for mod in lastModified['a3sync']], [], []
 
-        async with self.session.get('http://108.61.34.58/main/') as response:
+        async with self.session.get(self.utility.REPO_URL) as response:
             if response.status == 200:
                 soup = BeautifulSoup(await response.text(), features = "lxml")
 
@@ -501,7 +501,7 @@ class Tasking(commands.Cog):
         return ""
 
     def getA3SyncRepoSize(self):
-        url = "http://108.61.34.58/main/.a3s/"
+        url = "{}.a3s/".format(self.utility.REPO_URL)
         parsed_url = urlparse(url)
         scheme = parsed_url.scheme.capitalize
 

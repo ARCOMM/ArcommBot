@@ -2,11 +2,13 @@ import configparser
 from datetime import datetime
 import logging
 import subprocess
+from urllib.parse import urlparse
 
 import aiohttp
 from bs4 import BeautifulSoup
 from discord.ext import commands
 from pytz import timezone
+from a3s_to_json import repository
 
 logger = logging.getLogger('bot')
 
@@ -74,7 +76,7 @@ class Public(commands.Cog):
             members.sort(key = self.utility.roleListKey)
 
             for member in members:
-                if (member.nick is not None):
+                if member.nick is not None:
                     outString += "{} ;{}\n".format(member.nick, member.name)
                 else:
                     outString += "{}\n".format(member.name)
@@ -119,7 +121,7 @@ class Public(commands.Cog):
 
         try:
             modifier = int(modifier)
-        except Exception:
+        except:
             logger.debug(".optime modifier was not an int, assume timezone")
             timez = modifier
             modifier = 0
@@ -163,6 +165,38 @@ class Public(commands.Cog):
             await self.utility.send_message(ctx.channel, "Pinging...")
             p = subprocess.check_output(['ping', host])
             await self.utility.send_message(ctx.channel, "```{}```".format(p.decode("utf-8")))
+
+    @commands.command()
+    async def repo(self, ctx):
+        url = "{}.a3s/".format(self.utility.REPO_URL)
+        parsed_url = urlparse(url)
+        scheme = parsed_url.scheme.capitalize
+
+        repo = repository.parse(url, scheme, parseAutoconf=False, parseServerinfo=True, parseEvents=False, parseChangelog=False, parseSync=True)
+        mods = []
+        modString = []
+        longestModSize = 0
+
+        for mod in repo["sync"]["children"]:
+            modSize = self.getModSizeString(mod)
+            modName = mod["name"][1:]
+            mods.append([modSize, modName])
+
+            if len(modSize) > longestModSize:
+                longestModSize = len(modSize)
+
+        for mod in mods:
+            modString.append(" " * (longestModSize - len(mod[0])))
+            modString.append(mod[0] + " - ")
+            modString.append(mod[1] + "\n")
+
+        repoSize = round((float(repo["serverinfo"]["SERVER_INFO"]["totalFilesSize"]) / 1000000000), 2)
+        repoRevision = repo["serverinfo"]["SERVER_INFO"]["revision"]
+        serverInfoString = "Revision: {}\nMods: {}\nTotal size: {} GB".format(repoRevision, len(mods), repoSize)
+        modString = ''.join(modString)
+        outString = "```\n{}\n====================\n{}\n```".format(serverInfoString, modString)
+
+        await self.utility.send_message(ctx.channel, outString)
 
     @commands.command(aliases = ['rank'])
     async def role(self, ctx, *args):
@@ -231,7 +265,7 @@ class Public(commands.Cog):
             if response.status == 200:
                 soup = BeautifulSoup(await response.text(), features = "lxml")
 
-                warnings = soup.find_all("div", {"style": "background-color: #EA0; color: #FFF; display: flex;" + 
+                warnings = soup.find_all("div", {"style": "background-color: #EA0; color: #FFF; display: flex;" +
                                                  " align-items: center; margin: 0.5em 0"})
                 for warning in warnings:
                     warning.decompose()
@@ -306,6 +340,28 @@ class Public(commands.Cog):
                 dtString += ("{} {}, ".format(unit[0], unit[1]))
 
         return dtString
+
+    def getModSizeString(self, mod):
+        modSize = [0]
+        self.getObjSize(mod, modSize)
+
+        if modSize[0] >= 1000000000:
+            retSize = round((modSize[0] / 1000000000), 2)
+            retType = "GB"
+        else:
+            retSize = round((modSize[0] / 1000000), 2)
+            retType = "MB"
+
+        return "{} {}".format(retSize, retType)
+
+    def getObjSize(self, obj, modSize):
+        if obj["type"] == "Directory":
+            for child in obj["children"]:
+                self.getObjSize(child, modSize)
+        elif obj["type"] == "File":
+            modSize[0] += float(obj["size"])
+        else:
+            print(obj["type"])
 
     # ===Listeners=== #
 

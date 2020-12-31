@@ -32,6 +32,8 @@ class Utility(commands.Cog):
         for role in config['roles']:
             self.roles[role] = int(config['roles'][role])
 
+        self.REPO_URL = "http://108.61.34.58/main/"
+
     async def send_message(self, channel, message: str):
         """Send a message to the text channel"""
 
