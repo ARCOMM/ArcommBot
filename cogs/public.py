@@ -57,7 +57,7 @@ class Public(commands.Cog):
         """Check if daylight savings has started (in London)"""
 
         outString = "DST is in effect" if datetime.now(timezone("Europe/London")).dst() else "DST is ***not*** in effect"
-        await self.utility.send_message(ctx.channel, outString)
+        await self.utility.reply(ctx.message, outString)
 
     @commands.command()
     async def members(self, ctx, *args):
@@ -81,9 +81,9 @@ class Public(commands.Cog):
                 else:
                     outString += "{}\n".format(member.name)
 
-            await self.utility.send_message(ctx.channel, "```ini\n[ {} ]\n{}```".format(role.name, outString))
+            await self.utility.reply(ctx.message, "```ini\n[ {} ]\n{}```".format(role.name, outString))
         else:
-            await self.utility.send_message(ctx.channel, "{} Role **{}** does not exist".format(ctx.author.mention, roleQuery))
+            await self.utility.reply(ctx.message, "{} Role **{}** does not exist".format(ctx.author.mention, roleQuery))
 
     @commands.command(aliases = ['myranks'])
     async def myroles(self, ctx):
@@ -95,7 +95,7 @@ class Public(commands.Cog):
         for role in roles:
             outString += "{}\n".format(role.name)
 
-        await self.utility.send_message(ctx.channel, "```\n{}```".format(outString))
+        await self.utility.reply(ctx.message, "```\n{}```".format(outString))
 
     @commands.command(aliases = ['opday'])
     async def opstart(self, ctx):
@@ -105,7 +105,7 @@ class Public(commands.Cog):
         dt = self.formatDt(dt)
         outString = "Opday starts in {}!".format(dt)
 
-        await self.utility.send_message(ctx.channel, outString)
+        await self.utility.reply(ctx.message, outString)
 
     @commands.command(aliases = ['op'])
     async def optime(self, ctx, modifier = '0', timez = None):
@@ -146,7 +146,7 @@ class Public(commands.Cog):
             localTime = localTime.astimezone(timez)
             outString += "\n({}:00:00 {})".format(localTime.hour, timez.zone)
 
-        await self.utility.send_message(ctx.channel, outString)
+        await self.utility.reply(ctx.message, outString)
 
     @commands.command()
     async def ping(self, ctx, host = None):
@@ -160,11 +160,11 @@ class Public(commands.Cog):
         """
 
         if host is None:
-            await self.utility.send_message(ctx.channel, "Pong!")
+            await self.utility.reply(ctx.message, "Pong!")
         else:
-            await self.utility.send_message(ctx.channel, "Pinging...")
+            await self.utility.reply(ctx.message, "Pinging...")
             p = subprocess.check_output(['ping', host])
-            await self.utility.send_message(ctx.channel, "```{}```".format(p.decode("utf-8")))
+            await self.utility.reply(ctx.message, "```{}```".format(p.decode("utf-8")))
 
     @commands.command()
     async def repo(self, ctx):
@@ -195,7 +195,7 @@ class Public(commands.Cog):
         modString = ''.join(modString)
         outString = "```\n{}\n====================\n{}\n```".format(serverInfoString, modString)
 
-        await self.utility.send_message(ctx.channel, outString)
+        await self.utility.reply(ctx.message, outString)
 
     @commands.command(aliases = ['rank'])
     async def role(self, ctx, *args):
@@ -211,19 +211,22 @@ class Public(commands.Cog):
         roleQuery = " ".join(args)
         member = ctx.author
         role = self.utility.searchRoles(ctx, roleQuery, autocomplete = True, reserved = True)
+        outString = ""
 
         if role:
             if role != "RESERVED":
                 if role in member.roles:
                     await member.remove_roles(role, reason = "Remove role through .role command")
-                    await self.utility.send_message(ctx.channel, "{} You've left **{}**".format(member.mention, role.name))
+                    outString =  "{} You've left **{}**".format(member.mention, role.name)
                 else:
                     await member.add_roles(role, reason = "Added role through .role command")
-                    await self.utility.send_message(ctx.channel, "{} You've joined **{}**".format(member.mention, role.name))
+                    outString =  "{} You've joined **{}**".format(member.mention, role.name)
             else:
-                await self.utility.send_message(ctx.channel, "{} Role **{}** is reserved".format(member.mention, roleQuery))
+                outString =  "{} Role **{}** is reserved".format(member.mention, roleQuery)
         else:
-            await self.utility.send_message(ctx.channel, "{} Role **{}** does not exist".format(member.mention, roleQuery))
+            outString =  "{} Role **{}** does not exist".format(member.mention, roleQuery)
+
+        await self.utility.reply(ctx.message, outString)
 
     @commands.command(aliases = ['ranks'])
     async def roles(self, ctx):
@@ -245,7 +248,7 @@ class Public(commands.Cog):
             numSpaces = " " * (3 - len(numOfMembers))
             outString += "{}{}-{}{} members\n".format(role.name, nameSpaces, numSpaces, numOfMembers)
 
-        await self.utility.send_message(ctx.channel, "```\n{}```".format(outString))
+        await self.utility.reply(ctx.message, "```\n{}```".format(outString))
 
     @commands.command(aliases = ['wiki'])
     async def sqf(self, ctx, *args):
@@ -281,11 +284,11 @@ class Public(commands.Cog):
                         outString += "# {}\n{}\n\n".format(elem.text, elemContent.lstrip().rstrip())
 
                 if outString != "":
-                    await self.utility.send_message(ctx.channel, "<{}>\n```md\n{}```".format(wikiUrl, outString))
+                    await self.utility.reply(ctx.message, "<{}>\n```md\n{}```".format(wikiUrl, outString))
                 else:
-                    await self.utility.send_message(ctx.channel, "<{}>".format(wikiUrl))
+                    await self.utility.reply(ctx.message, "<{}>".format(wikiUrl))
             else:
-                await self.utility.send_message(ctx.channel, "{} Error - Couldn't get <{}>".format(response.status, wikiUrl))
+                await self.utility.reply(ctx.message, "{} Error - Couldn't get <{}>".format(response.status, wikiUrl))
 
     @commands.command()
     async def ticket(self, ctx, site):
@@ -295,9 +298,9 @@ class Public(commands.Cog):
         """
         site = site.lower()
         if site in TICKET_SITES:
-            await self.utility.send_message(ctx.channel, "Create a ticket here: <{}>".format(TICKET_SITES[site]))
+            await self.utility.reply(ctx.message, "Create a ticket here: <{}>".format(TICKET_SITES[site]))
         else:
-            await self.utility.send_message(ctx.channel, "Invalid site ({})".format(", ".join(TICKET_SITES)))
+            await self.utility.reply(ctx.message, "Invalid site ({})".format(", ".join(TICKET_SITES)))
 
     @commands.command(aliases = ['utc'])
     async def zulu(self, ctx):
@@ -306,7 +309,7 @@ class Public(commands.Cog):
         now = datetime.utcnow()
         outString = "It is currently {}:{}:{} Zulu time (UTC)".format(now.hour, now.minute, now.second)
 
-        await self.utility.send_message(ctx.channel, outString)
+        await self.utility.reply(ctx.message, outString)
 
     # ===Utility=== #
 

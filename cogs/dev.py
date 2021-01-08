@@ -45,13 +45,13 @@ class Dev(commands.Cog):
     async def _load(self, ctx, ext: str):
         self.bot.load_extension("cogs." + ext)
         logger.info("=========Loaded %s extension=========", ext)
-        await self.utility.send_message(ctx.channel, "Loaded {} extension".format(ext))
+        await self.utility.reply(ctx.message, "Loaded {} extension".format(ext))
 
     @commands.command(name = "resources", hidden = True)
     @is_dev()
     async def _resources(self, ctx):
         outString = "```\n{}```".format("\n".join(os.listdir("resources/")))
-        await self.utility.send_message(ctx.channel, outString)
+        await self.utility.reply(ctx.message, outString)
 
     @commands.command(name = "getres", hidden = True)
     @is_dev()
@@ -68,13 +68,13 @@ class Dev(commands.Cog):
     async def _reload(self, ctx, ext: str):
         self.bot.reload_extension("cogs." + ext)
         logger.info("=========Reloaded %s extension=========", ext)
-        await self.utility.send_message(ctx.channel, "Reloaded {} extension".format(ext))
+        await self.utility.reply(ctx.message, "Reloaded {} extension".format(ext))
 
     @commands.command(name = "restart", hidden = True)
     @is_dev()
     async def _restart(self, ctx):
         print("============ RESTARTING ============")
-        await self.utility.send_message(ctx.channel, "Restarting")
+        await self.utility.reply(ctx.message, "Restarting")
         ArcommBot.restart()
 
     @commands.command(name = "shutdown", hidden = True)
@@ -103,7 +103,7 @@ class Dev(commands.Cog):
                 os.replace(tempFilename, "cogs/{}".format(newCog.filename))
 
                 logger.info("%s successfully updated", newCog.filename)
-                await self.utility.send_message(ctx.channel, "{} successfully updated".format(newCog.filename))
+                await self.utility.reply(ctx.message, "{} successfully updated".format(newCog.filename))
 
                 return newCog.filename.split(".")[0]
 
