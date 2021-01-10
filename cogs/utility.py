@@ -32,12 +32,23 @@ class Utility(commands.Cog):
         for role in config['roles']:
             self.roles[role] = int(config['roles'][role])
 
+        self.REPO_URL = "http://108.61.34.58/main/"
+
     async def send_message(self, channel, message: str):
         """Send a message to the text channel"""
 
         await channel.trigger_typing()
         newMessage = await channel.send(message)
         logger.info("Sent message to %s : %s", channel, newMessage.content)
+
+        return newMessage
+
+    async def reply(self, message, response: str):
+        """Reply to the given message"""
+
+        await message.channel.trigger_typing()
+        newMessage = await message.channel.send(response, reference = message.to_reference())
+        logger.info("Sent message to %s : %s", message.channel, newMessage.content)
 
         return newMessage
 
@@ -111,13 +122,13 @@ class Utility(commands.Cog):
         if resource in os.listdir("resources/"):
             await ctx.channel.send(resource, file = File("resources/{}".format(resource), filename = resource))
         else:
-            await self.send_message(ctx.channel, "{} not in resources".format(resource))
+            await self.reply(ctx.message, "{} not in resources".format(resource))
 
     async def setResource(self, ctx):
         attachments = ctx.message.attachments
 
         if attachments == []:
-            await self.send_message(ctx.channel, "No attachment found")
+            await self.reply(ctx.message, "No attachment found")
         else:
             newResource = attachments[0]
             resourceName = newResource.filename
@@ -126,9 +137,9 @@ class Utility(commands.Cog):
                 os.rename("resources/{}".format(resourceName), "resources/backups/{}.bak".format(resourceName))
                 await newResource.save("resources/{}".format(resourceName))
 
-                await self.send_message(ctx.channel, "{} {} has been updated".format(ctx.author.mention, resourceName))
+                await self.reply(ctx.message, "{} {} has been updated".format(ctx.author.mention, resourceName))
             else:
-                await self.send_message(ctx.channel, "{} {} not in resources".format(ctx.author.mention, resourceName))
+                await self.reply(ctx.message, "{} {} not in resources".format(ctx.author.mention, resourceName))
 
     # ===Listeners=== #
 
@@ -149,7 +160,7 @@ class Utility(commands.Cog):
             if re.match(puncPattern, ctx.message.content):
                 return
 
-            await self.send_message(ctx.channel, "Command **{}** not found, use .help for a list".format(ctx.message.content))
+            await self.reply(ctx.message, "Command **{}** not found, use .help for a list".format(ctx.message.content))
 
         if not ctx.command:
             return
@@ -163,7 +174,7 @@ class Utility(commands.Cog):
                 return
 
         elif errorType == commands.errors.ExtensionNotLoaded:
-            await self.send_message(ctx.channel, command)
+            await self.reply(ctx.message, command)
             if command == "reload":
                 outString = "Cog not previously loaded"
 
@@ -184,7 +195,7 @@ class Utility(commands.Cog):
                 if command == "reload":
                     outString = "Cog not previously loaded"
 
-        await self.send_message(ctx.channel, outString)
+        await self.reply(ctx.message, outString)
 
     @commands.Cog.listener()
     async def on_ready(self):

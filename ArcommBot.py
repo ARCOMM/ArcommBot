@@ -56,7 +56,7 @@ def loadExtensions():
         except Exception as e:
             print(e)
             logger.critical("Failed to load {} extension\n".format(extension))
-            logger.critical(e)   
+            logger.critical(e)
 
 
 def restart():

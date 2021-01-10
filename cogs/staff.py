@@ -4,9 +4,9 @@ from discord.ext import commands
 
 logger = logging.getLogger('bot')
 
+
 class Staff(commands.Cog):
     '''Contains commands usable by any Staff'''
-
 
     def __init__(self, bot):
         self.bot = bot
@@ -24,10 +24,10 @@ class Staff(commands.Cog):
         role = self.utility.searchRoles(ctx, roleQuery, reserved = True)
 
         if role:
-            await self.utility.send_message(ctx.channel, "{} Role **{}** already exists".format(member.mention, roleQuery))
+            await self.utility.reply(ctx.message, "{} Role **{}** already exists".format(member.mention, roleQuery))
         else:
             await member.guild.create_role(name = roleQuery, reason = "Added role through .addrole", mentionable = True)
-            await self.utility.send_message(ctx.channel, "{} Added role **{}**".format(member.mention, roleQuery))
+            await self.utility.reply(ctx.message, "{} Added role **{}**".format(member.mention, roleQuery))
 
     @commands.command()
     @commands.has_role("Staff")
@@ -69,15 +69,18 @@ class Staff(commands.Cog):
         roleQuery = " ".join(args)
         member = ctx.author
         role = self.utility.searchRoles(ctx, roleQuery, reserved = True)
+        outString = ""
 
         if role:
             if role != "RESERVED":
                 await role.delete(reason = "Removed role through .removerole")
-                await self.utility.send_message(ctx.channel, "{} Removed role **{}**".format(member.mention, role.name))
+                outString = "{} Removed role **{}**".format(member.mention, role.name)
             else:
-                await self.utility.send_message(ctx.channel, "{} Role **{}** is reserved".format(member.mention, roleQuery))
+                outString = "{} Role **{}** is reserved".format(member.mention, roleQuery)
         else:
-            await self.utility.send_message(ctx.channel, "{} Role **{}** doesn't exist".format(member.mention, roleQuery))
+            outString = "{} Role **{}** doesn't exist".format(member.mention, roleQuery)
+
+        await self.utility.reply(ctx.message, outString)
 
     @commands.command(aliases = ["renamerank", "rename"])
     @commands.has_role("Staff")
@@ -89,17 +92,19 @@ class Staff(commands.Cog):
         '''
         member = ctx.author
         role = self.utility.searchRoles(ctx, oldName, reserved = True)
+        outString = ""
 
         if role:
             if role != "RESERVED":
                 oldRoleName = str(role.name)
                 await role.edit(name = newName)
-                await self.utility.send_message(ctx.channel, 
-                                                "{} Renamed **{}** to **{}**".format(member.mention, oldRoleName, role.name))
+                outString = "{} Renamed **{}** to **{}**".format(member.mention, oldRoleName, role.name)
             else:
-                await self.utility.send_message(ctx.channel, "{} Role **{}** is reserved".format(member.mention, oldName))
+                outString = "{} Role **{}** is reserved".format(member.mention, oldName)
         else:
-            await self.utility.send_message(ctx.channel, "{} Role **{}** doesn't exist".format(member.mention, oldName))
+            outString = "{} Role **{}** doesn't exist".format(member.mention, oldName)
+
+        await self.utility.reply(ctx.message, outString)
 
     # ===Listeners=== #
 
