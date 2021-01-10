@@ -48,7 +48,7 @@ TICKET_LINKS = {
 TICKET_REPOS = {
     "arc_misc": "ARCOMM/arc_misc",
     "archub": "ARCOMM/ARCHUB",
-    "arcommbot":  "ARCOMM/ArcommBot"
+    "arcommbot": "ARCOMM/ArcommBot"
 }
 
 
@@ -227,14 +227,14 @@ class Public(commands.Cog):
             if role != "RESERVED":
                 if role in member.roles:
                     await member.remove_roles(role, reason = "Remove role through .role command")
-                    outString =  "{} You've left **{}**".format(member.mention, role.name)
+                    outString = "{} You've left **{}**".format(member.mention, role.name)
                 else:
                     await member.add_roles(role, reason = "Added role through .role command")
-                    outString =  "{} You've joined **{}**".format(member.mention, role.name)
+                    outString = "{} You've joined **{}**".format(member.mention, role.name)
             else:
-                outString =  "{} Role **{}** is reserved".format(member.mention, roleQuery)
+                outString = "{} Role **{}** is reserved".format(member.mention, roleQuery)
         else:
-            outString =  "{} Role **{}** does not exist".format(member.mention, roleQuery)
+            outString = "{} Role **{}** does not exist".format(member.mention, roleQuery)
 
         await self.utility.reply(ctx.message, outString)
 
@@ -315,9 +315,9 @@ class Public(commands.Cog):
             return
 
         if title is None or body is None:
-            await self.utility.reply(ctx.message, 'Command should be in the format: ```\n.ticket {} "title" "body"```\n'.format(repo) +
-            'Please try to give a short but descriptive title,\n' +
-            'and provide as much useful information in the body as possible')
+            await self.utility.reply(ctx.message, 'Command should be in the format: ```\n.ticket {} "title" "body"```\n'.format(repo)
+                                                + 'Please try to give a short but descriptive title,\n' 
+                                                + 'and provide as much useful information in the body as possible')
             return
 
         author = ctx.message.author
