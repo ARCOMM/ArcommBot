@@ -304,6 +304,7 @@ class Tasking(commands.Cog):
         updatePost = ""
         newRevision = repo["serverinfo"]["SERVER_INFO"]["revision"]
         if not (lastModified['revision'] < newRevision):
+            self.resourcesLocked = False
             return False, updatePost
 
         newRepoSize = round((float(repo["serverinfo"]["SERVER_INFO"]["totalFilesSize"]) / 1000000000), 2)
