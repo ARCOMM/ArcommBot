@@ -87,6 +87,7 @@ class Tasking(commands.Cog):
         self.utility = self.bot.get_cog("Utility")
         self.calendar = CalendarDB()
         self.session = aiohttp.ClientSession()
+        self.resourcesLocked = False
 
     # ===Tasks=== #
 
@@ -176,7 +177,12 @@ class Tasking(commands.Cog):
     async def a3syncTask(self):
         a3syncChanged, a3syncPost = await self.handleA3Sync()
         if a3syncChanged:
-            await self.utility.send_message(self.utility.channels['announcements'], a3syncPost)
+            await self.utility.send_message(self.utility.channels["announcements"], a3syncPost)
+
+    @a3syncTask.before_loop
+    async def before_a3syncTask(self):
+        """Add a delay before checking a3sync to avoid resource lock"""
+        await asyncio.sleep(5)
 
     @tasks.loop(hours = 24)
     async def recruitTask(self):
@@ -280,70 +286,66 @@ class Tasking(commands.Cog):
         await channel.send(introString, file = File("resources/recruit_post.md", filename = "recruit_post.md"))
 
     async def handleA3Sync(self):
+        if self.resourcesLocked:
+            await self.utility.send_message(self.utility.channels["testing"], "a3sync res locked")
+            return False, ""
+        self.resourcesLocked = True
+
+        url = "{}.a3s/".format(self.utility.REPO_URL)
+        scheme = urlparse(url).scheme.capitalize
+
+        repo = repository.parse(url, scheme, parseAutoconf=False, parseServerinfo=True, parseEvents=False,
+                                parseChangelog=True, parseSync=False)
+
         lastModified = {}
         with open('resources/last_modified.json', 'r') as f:
             lastModified = json.load(f)
 
-        repoChanged = False
         updatePost = ""
-        deleted, added, updated = list(lastModified['a3sync']), [], []
+        newRevision = repo["serverinfo"]["SERVER_INFO"]["revision"]
+        if not (lastModified['revision'] < newRevision):
+            return False, updatePost
 
-        async with self.session.get(self.utility.REPO_URL) as response:
-            if response.status == 200:
-                soup = BeautifulSoup(await response.text(), features = "lxml")
-
-                for row in soup.find_all('a', href=True)[2:]:
-                    mod = row.text[1:]
-                    matches = re.findall(r'(\S+)', row.previous_element[:-6].strip())
-                    updateString = "{} {} {}".format(matches[0], matches[1], matches[2])
-                    updateDatetime = str(datetime.strptime(updateString, "%m/%d/%Y %I:%M %p"))
-
-                    if mod in lastModified['a3sync']:
-                        deleted.remove(mod)
-
-                        if updateDatetime != lastModified['a3sync'][mod]:
-                            logger.debug("%s updated (%s, %s)", mod, lastModified['a3sync'][mod], updateDatetime)
-                            repoChanged = True
-                            lastModified['a3sync'][mod] = updateDatetime
-                            logger.debug("lastModified:")
-                            logger.debug(lastModified)
-                            updated.append(mod)
-                            logger.debug(updated)
-                    else:
-                        logger.debug("%s added (%s)", mod, lastModified['a3sync'][mod])
-                        repoChanged = True
-                        lastModified['a3sync'][mod] = updateDatetime
-
-                        added.append(mod)
-            else:
-                logger.debug("REPO GET error: %s %s - %s", response.status, response.reason, await response.text())
-
-        newRepoSize = self.getA3SyncRepoSize()
+        newRepoSize = round((float(repo["serverinfo"]["SERVER_INFO"]["totalFilesSize"]) / 1000000000), 2)
         repoSizeChange = round(newRepoSize - float(lastModified['a3sync_size']), 2)
         repoChangeString = str(repoSizeChange) if (repoSizeChange < 0) else "+{}".format(repoSizeChange)
+
+        newChangelog = None
+        for changelog in repo["changelog"]:
+            revision = repo["changelog"][changelog]["revision"]
+            if revision == newRevision:
+                newChangelog = repo["changelog"][changelog]
 
         updatePost = "```md\n# The ArmA3Sync repo has changed #\n\n[{} GB]({} GB)\n\n< Updated >\n{}\n\n< Added >\n{}\n\n< Removed >\n{}```".format(
             str(newRepoSize),
             repoChangeString,
-            "\n".join(updated),
-            "\n".join(added),
-            "\n".join(deleted)
+            "\n".join(newChangelog["updatedAddons"]),
+            "\n".join(newChangelog["newAddons"]),
+            "\n".join(newChangelog["deletedAddons"])
         )
 
         lastModified['a3sync_size'] = newRepoSize
-        for mod in deleted:
-            logger.debug("%s deleted", mod)
-            del lastModified['a3sync'][mod]
+        lastModified['revision'] = newRevision
 
-        logger.debug("Final lastModified")
-        logger.debug(lastModified)
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
+            print(lastModified)
 
-        return repoChanged, updatePost
+        lastModified = {}
+        with open('resources/last_modified.json', 'r') as f:
+            lastModified = json.load(f)
+            print(lastModified)
+        
+        self.resourcesLocked = False
+        return True, updatePost
 
     async def handleGithub(self):
         logger.debug("handleGithub called")
+
+        if self.resourcesLocked:
+            await self.utility.send_message(self.utility.channels["testing"], "github res locked")
+            return False, ""
+        self.resourcesLocked = True
 
         repoUrl = 'https://api.github.com/repos'
         lastModified = {}
@@ -381,10 +383,17 @@ class Tasking(commands.Cog):
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
 
+        self.resourcesLocked = False
+
         return repoChanged, updatePost
 
     async def handleCup(self):
         logger.debug("handleCup called")
+
+        if self.resourcesLocked:
+            await self.utility.send_message(self.utility.channels["testing"], "cup res locked")
+            return False, ""
+        self.resourcesLocked = True
 
         lastModified = {}
 
@@ -421,10 +430,17 @@ class Tasking(commands.Cog):
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
 
+        self.resourcesLocked = False
+
         return repoChanged, updatePost
 
     async def handleSteam(self):
         logger.debug("handleSteam called")
+
+        if self.resourcesLocked:
+            await self.utility.send_message(self.utility.channels["testing"], "steam res locked")
+            return False, ""
+        self.resourcesLocked = True
 
         # https://partner.steamgames.com/doc/webapi/ISteamRemoteStorage
         steamUrl = 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/'
@@ -472,6 +488,8 @@ class Tasking(commands.Cog):
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
 
+        self.resourcesLocked = False
+
         return repoChanged, updatePost
 
     async def getSteamChangelog(self, modId):
@@ -485,16 +503,6 @@ class Tasking(commands.Cog):
             print("steam GET error: {} {} - {}".format(response.status, response.reason, await response.text()))
 
         return ""
-
-    def getA3SyncRepoSize(self):
-        url = "{}.a3s/".format(self.utility.REPO_URL)
-        parsed_url = urlparse(url)
-        scheme = parsed_url.scheme.capitalize
-
-        x = repository.parse(url, scheme, parseAutoconf=False, parseServerinfo=True, parseEvents=False,
-                             parseChangelog=False, parseSync=False)
-
-        return round((int(x["serverinfo"]["SERVER_INFO"]["totalFilesSize"]) / 1000000000), 2)  # Bytes to GB
 
     # ===Listeners=== #
 
