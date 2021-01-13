@@ -308,11 +308,11 @@ class Public(commands.Cog):
             .ticket repo "title" "body"
         """
 
-        repo = repo.lower()
-
         if repo not in TICKET_REPOS:
             await self.utility.reply(ctx.message, "Invalid repo ({})".format(", ".join(TICKET_REPOS)))
             return
+
+        repo = repo.lower()
 
         if title is None or body is None:
             await self.utility.reply(ctx.message, 'Command should be in the format: ```\n.ticket {} "title" "body"```\n'.format(repo)
