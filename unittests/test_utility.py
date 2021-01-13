@@ -1,8 +1,6 @@
 import unittest
 from unittest import IsolatedAsyncioTestCase
 
-from mocking import *
-
 class UtilityTest(IsolatedAsyncioTestCase):
     @classmethod
     def setUpClass(self):
@@ -118,7 +116,9 @@ if __name__ == '__main__':
         from os import path
         sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
         from cogs.utility import Utility
+        from mocking import *
     else:
         from ..cogs.utility import Utility
+        from .mocking import *
 
     unittest.main()
