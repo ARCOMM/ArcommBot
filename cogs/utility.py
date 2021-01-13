@@ -10,27 +10,26 @@ from discord import File
 from discord.ext import commands
 from pytz import timezone, UnknownTimeZoneError
 
-logger = logging.getLogger('bot')
-
-config = configparser.ConfigParser()
-config.read('resources/config.ini')
-
 
 class Utility(commands.Cog):
     '''Contains useful functions that can be used in any cogs'''
 
     def __init__(self, bot):
         self.bot = bot
-        self.channels = {}
-        self.roles = {}
-        self.cog_setup()
+        if bot != "MockBot":
+            self.config = configparser.ConfigParser()
+            self.config.read('resources/config.ini')
+            self.channels = {}
+            self.roles = {}
+            self.cog_setup()
+            self.logger = logging.getLogger('bot')
 
     def cog_setup(self):
-        for channel in config['channels']:
-            self.channels[channel] = self.bot.get_channel(int(config['channels'][channel]))
+        for channel in self.config['channels']:
+            self.channels[channel] = self.bot.get_channel(int(self.config['channels'][channel]))
 
-        for role in config['roles']:
-            self.roles[role] = int(config['roles'][role])
+        for role in self.config['roles']:
+            self.roles[role] = int(self.config['roles'][role])
 
         self.REPO_URL = "http://108.61.34.58/main/"
 
@@ -39,7 +38,7 @@ class Utility(commands.Cog):
 
         await channel.trigger_typing()
         newMessage = await channel.send(message)
-        logger.info("Sent message to %s : %s", channel, newMessage.content)
+        self.logger.info("Sent message to %s : %s", channel, newMessage.content)
 
         return newMessage
 
@@ -48,12 +47,12 @@ class Utility(commands.Cog):
 
         await message.channel.trigger_typing()
         newMessage = await message.channel.send(response, reference = message.to_reference())
-        logger.info("Sent message to %s : %s", message.channel, newMessage.content)
+        self.logger.info("Sent message to %s : %s", message.channel, newMessage.content)
 
         return newMessage
 
     def getRoles(self, ctx, reserved = False, sort = False, personal = False):
-        logger.debug("getRoles called")
+        self.logger.debug("getRoles called")
 
         if not personal:
             roles = ctx.message.author.guild.roles[1:]
@@ -73,7 +72,7 @@ class Utility(commands.Cog):
         return roles
 
     def searchRoles(self, ctx, roleQuery, autocomplete = False, reserved = False, censorReserved = True):
-        logger.debug("searchRoles called")
+        self.logger.debug("searchRoles called")
 
         roles = self.getRoles(ctx, reserved = reserved)
         roleQuery = roleQuery.lower()
@@ -102,7 +101,7 @@ class Utility(commands.Cog):
         return elem.name.lower()
 
     def timeUntil(self, time = "opday", modifier = 0):
-        # logger.debug("timeUntil called with time = {}".format(time))
+        # self.logger.debug("timeUntil called with time = {}".format(time))
         today = datetime.now(tz = timezone('Europe/London'))
         opday = None
 
@@ -146,7 +145,7 @@ class Utility(commands.Cog):
     @commands.Cog.listener()
     async def on_command(self, ctx):
         cogName = ctx.cog.qualified_name if ctx.cog is not None else None
-        logger.info("[%s] command [%s] called by [%s]", cogName, ctx.message.content, ctx.message.author)
+        self.logger.info("[%s] command [%s] called by [%s]", cogName, ctx.message.content, ctx.message.author)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
@@ -200,7 +199,7 @@ class Utility(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print("===Bot connected/reconnected===")
-        logger.info("===Bot connected/reconnected===")
+        self.logger.info("===Bot connected/reconnected===")
         self.cog_setup()
 
 
