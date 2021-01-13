@@ -1,3 +1,9 @@
+import sys
+from os import path
+sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+from cogs.utility import Utility
+from mocking import *
+
 import unittest
 from unittest import IsolatedAsyncioTestCase
 
@@ -111,14 +117,4 @@ class UtilityTest(IsolatedAsyncioTestCase):
     # TODO: async def on_command_error(self):
 
 if __name__ == '__main__':
-    if __package__ is None:
-        import sys
-        from os import path
-        sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-        from cogs.utility import Utility
-        from mocking import *
-    else:
-        from ..cogs.utility import Utility
-        from .mocking import *
-
     unittest.main()
