@@ -1,11 +1,13 @@
 import sys
 from os import path
 sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-from cogs.utility import Utility
-from mocking import *
 
 import unittest
 from unittest import IsolatedAsyncioTestCase
+
+from ArcommBot.cogs.utility import Utility
+from mocking import *
+
 
 class UtilityTest(IsolatedAsyncioTestCase):
     @classmethod
