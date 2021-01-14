@@ -6,7 +6,10 @@ import unittest
 from unittest import IsolatedAsyncioTestCase
 
 from cogs.utility import Utility
-from mocking import *
+try:
+    from mocking import *
+except:
+    from .mocking import *
 
 
 class UtilityTest(IsolatedAsyncioTestCase):
