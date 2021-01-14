@@ -5,8 +5,11 @@ sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 import unittest
 from unittest import IsolatedAsyncioTestCase
 
-from ArcommBot.cogs.utility import Utility
-from mocking import *
+from cogs.utility import Utility
+try:
+    from mocking import *
+except:
+    from .mocking import *
 
 
 class UtilityTest(IsolatedAsyncioTestCase):
