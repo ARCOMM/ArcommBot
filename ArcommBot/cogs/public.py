@@ -58,7 +58,8 @@ class Public(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.utility = self.bot.get_cog("Utility")
-        self.session = aiohttp.ClientSession()
+        if str(bot) != "MockBot":
+            self.session = aiohttp.ClientSession()
 
     # ===Commands=== #
 
@@ -92,8 +93,11 @@ class Public(commands.Cog):
                     outString += "{}\n".format(member.name)
 
             await self.utility.reply(ctx.message, "```ini\n[ {} ]\n{}```".format(role.name, outString))
+            return members
         else:
             await self.utility.reply(ctx.message, "{} Role **{}** does not exist".format(ctx.author.mention, roleQuery))
+        
+        return None
 
     @commands.command(aliases = ['myranks'])
     async def myroles(self, ctx):
@@ -106,6 +110,7 @@ class Public(commands.Cog):
             outString += "{}\n".format(role.name)
 
         await self.utility.reply(ctx.message, "```\n{}```".format(outString))
+        return roles
 
     @commands.command(aliases = ['opday'])
     async def opstart(self, ctx):

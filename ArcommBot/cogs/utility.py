@@ -16,13 +16,13 @@ class Utility(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        if bot != "MockBot":
+        if str(bot) != "MockBot":
+            self.logger = logging.getLogger('bot')
             self.config = configparser.ConfigParser()
             self.config.read('resources/config.ini')
             self.channels = {}
             self.roles = {}
-            self.cog_setup()
-            self.logger = logging.getLogger('bot')
+            self.cog_setup()    
 
     def cog_setup(self):
         for channel in self.config['channels']:

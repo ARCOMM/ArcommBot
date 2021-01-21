@@ -15,10 +15,10 @@ except:
 class UtilityTest(IsolatedAsyncioTestCase):
     @classmethod
     def setUpClass(self):
-        self.cog = Utility("MockBot")
         self.logger = MockLogger()
+        self.cog = Utility(MockBot(self.logger))
         self.cog.logger = self.logger
-
+        
         self.general_channel = MockChannel("general")
         channels = [self.general_channel]
 
@@ -48,7 +48,7 @@ class UtilityTest(IsolatedAsyncioTestCase):
 
     async def test_reply(self):
         testString = "Test reply"
-        originMessage = await self.general_channel.send("Origin message")
+        originMessage = await self.user.mock_send(self.general_channel, "Origin message")
         message = await self.cog.reply(originMessage, testString)
 
         self.assertTrue(self.logger.findLog(LogSeverity.INFO, f"Sent message to {self.general_channel} : {testString}"))
@@ -57,7 +57,7 @@ class UtilityTest(IsolatedAsyncioTestCase):
 
     async def test_getRoles(self):
         message = await self.user.mock_send(self.general_channel, "Test message")
-        ctx = MockContext(message = message)
+        ctx = MockContext(message)
 
         roles = self.cog.getRoles(ctx)
         self.assertTrue(self.logger.findLog(LogSeverity.DEBUG, "getRoles called"))    
@@ -80,7 +80,7 @@ class UtilityTest(IsolatedAsyncioTestCase):
 
     async def test_searchRoles(self):
         message = await self.user.mock_send(self.general_channel, "Test message")
-        ctx = MockContext(message = message)
+        ctx = MockContext(message)
 
         roles = self.cog.searchRoles(ctx, "pick")
         self.assertEqual(roles, None)
@@ -108,13 +108,13 @@ class UtilityTest(IsolatedAsyncioTestCase):
 
     async def test_on_command(self):
         message = await self.user.mock_send(self.general_channel, ".help opday")
-        ctx = MockContext(None, message)
+        ctx = MockContext(message)
 
         await self.cog.on_command(ctx)
         self.assertTrue(self.logger.findLog(LogSeverity.INFO, f"[None] command [.help opday] called by [{self.user.name}]"))
 
         message = await self.user.mock_send(self.general_channel, ".opday")
-        ctx = MockContext(MockCog("Public"), message)
+        ctx = MockContext(message, MockCog("Public"))
 
         await self.cog.on_command(ctx)
         self.assertTrue(self.logger.findLog(LogSeverity.INFO, f"[Public] command [.opday] called by [{self.user.name}]"))
