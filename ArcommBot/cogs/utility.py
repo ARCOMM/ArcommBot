@@ -41,6 +41,15 @@ class Utility(commands.Cog):
         self.logger.info("Sent message to %s : %s", channel, newMessage.content)
 
         return newMessage
+    
+    async def send_embed(self, channel, embed):
+        """Send a message to the text channel"""
+
+        await channel.trigger_typing()
+        newMessage = await channel.send(embed = embed)
+        self.logger.info("Sent embed to %s", channel)
+
+        return newMessage
 
     async def reply(self, message, response: str):
         """Reply to the given message"""
@@ -55,7 +64,7 @@ class Utility(commands.Cog):
         self.logger.debug("getRoles called")
 
         if not personal:
-            roles = ctx.message.author.guild.roles[1:]
+            roles = [role for role in ctx.message.author.guild.roles[1:] if role < ctx.me.roles[-1]]
         else:
             roles = ctx.message.author.roles[1:]
 
@@ -74,7 +83,11 @@ class Utility(commands.Cog):
     def searchRoles(self, ctx, roleQuery, autocomplete = False, reserved = False, censorReserved = True):
         self.logger.debug("searchRoles called")
 
+        if len(roleQuery) == 0:
+            return None
+
         roles = self.getRoles(ctx, reserved = reserved)
+        
         roleQuery = roleQuery.lower()
         candidate = None
 

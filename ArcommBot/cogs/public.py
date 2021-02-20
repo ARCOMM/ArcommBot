@@ -12,12 +12,12 @@ from discord.ext import commands
 from pytz import timezone
 from a3s_to_json import repository
 
-logger = logging.getLogger('bot')
+logger = logging.getLogger("bot")
 
 config = configparser.ConfigParser()
-config.read('resources/config.ini')
+config.read("resources/config.ini")
 
-GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 EXTRA_TIMEZONES = {
     "PT": "America/Los_Angeles",
@@ -31,7 +31,7 @@ EXTRA_TIMEZONES = {
     "CDT": "ETC/GMT+5",
     "ET": "America/New_York",
     "EST": "ETC/GMT+5",
-    "EDT": "ETC/GMT+4"
+    "EDT": "ETC/GMT+4",
 }
 
 TICKET_LINKS = {
@@ -42,18 +42,18 @@ TICKET_LINKS = {
     "arma": "https://feedback.bistudio.com/maniphest/task/edit/form/3/",
     "arc_misc": "https://github.com/ARCOMM/arc_misc/issues/new",
     "archub": "https://github.com/ARCOMM/ARCHUB/issues/new",
-    "tmf": "https://github.com/TMF3/TMF/issues/new"
+    "tmf": "https://github.com/TMF3/TMF/issues/new",
 }
 
 TICKET_REPOS = {
     "arc_misc": "ARCOMM/arc_misc",
     "archub": "ARCOMM/ARCHUB",
-    "arcommbot": "ARCOMM/ArcommBot"
+    "arcommbot": "ARCOMM/ArcommBot",
 }
 
 
 class Public(commands.Cog):
-    '''Contains commands that can be used by anyone in the Discord channel'''
+    """Contains commands that can be used by anyone in the Discord channel"""
 
     def __init__(self, bot):
         self.bot = bot
@@ -63,7 +63,7 @@ class Public(commands.Cog):
 
     # ===Commands=== #
 
-    @commands.command(aliases = ['daylightsavings'])
+    @commands.command(aliases = ["daylightsavings"])
     async def dst(self, ctx):
         """Check if daylight savings has started (in London)"""
 
@@ -72,14 +72,16 @@ class Public(commands.Cog):
 
     @commands.command()
     async def members(self, ctx, *args):
-        '''Get a list of members in a role
+        """Get a list of members in a role
 
             Usage:
                 .members rolename
-        '''
+        """
 
         roleQuery = " ".join(args)
-        role = self.utility.searchRoles(ctx, roleQuery, autocomplete = True, reserved = True, censorReserved = False)
+        role = self.utility.searchRoles(
+            ctx, roleQuery, autocomplete = True, reserved = True, censorReserved = False
+        )
 
         if role:
             outString = ""
@@ -92,14 +94,19 @@ class Public(commands.Cog):
                 else:
                     outString += "{}\n".format(member.name)
 
-            await self.utility.reply(ctx.message, "```ini\n[ {} ]\n{}```".format(role.name, outString))
+            await self.utility.reply(
+                ctx.message, "```ini\n[ {} ]\n{}```".format(role.name, outString)
+            )
             return members
         else:
-            await self.utility.reply(ctx.message, "{} Role **{}** does not exist".format(ctx.author.mention, roleQuery))
-        
+            await self.utility.reply(
+                ctx.message,
+                "{} Role **{}** does not exist".format(ctx.author.mention, roleQuery),
+            )
+
         return None
 
-    @commands.command(aliases = ['myranks'])
+    @commands.command(aliases = ["myranks"])
     async def myroles(self, ctx):
         """Get a list of roles you're in"""
 
@@ -112,7 +119,7 @@ class Public(commands.Cog):
         await self.utility.reply(ctx.message, "```\n{}```".format(outString))
         return roles
 
-    @commands.command(aliases = ['opday'])
+    @commands.command(aliases = ["opday"])
     async def opstart(self, ctx):
         """Time left until opday (Saturday optime)"""
 
@@ -122,8 +129,8 @@ class Public(commands.Cog):
 
         await self.utility.reply(ctx.message, outString)
 
-    @commands.command(aliases = ['op'])
-    async def optime(self, ctx, modifier = '0', timez = None):
+    @commands.command(aliases = ["op"])
+    async def optime(self, ctx, modifier = "0", timez = None):
         """Time left until optime
 
         Usage:
@@ -157,7 +164,9 @@ class Public(commands.Cog):
             else:
                 timez = timezone(timez)
 
-            localTime = datetime.now(tz = timezone('Europe/London')).replace(hour = 18 + modifier)
+            localTime = datetime.now(tz=timezone("Europe/London")).replace(
+                hour = 18 + modifier
+            )
             localTime = localTime.astimezone(timez)
             outString += "\n({}:00:00 {})".format(localTime.hour, timez.zone)
 
@@ -178,7 +187,7 @@ class Public(commands.Cog):
             await self.utility.reply(ctx.message, "Pong!")
         else:
             await self.utility.reply(ctx.message, "Pinging...")
-            p = subprocess.check_output(['ping', host])
+            p = subprocess.check_output(["ping", host])
             await self.utility.reply(ctx.message, "```{}```".format(p.decode("utf-8")))
 
     @commands.command()
@@ -186,8 +195,15 @@ class Public(commands.Cog):
         url = "{}.a3s/".format(self.utility.REPO_URL)
         scheme = urlparse(url).scheme.capitalize
 
-        repo = repository.parse(url, scheme, parseAutoconf=False, parseServerinfo=True, parseEvents=False,
-                                parseChangelog=False, parseSync=True)
+        repo = repository.parse(
+            url,
+            scheme,
+            parseAutoconf=False,
+            parseServerinfo=True,
+            parseEvents=False,
+            parseChangelog=False,
+            parseSync=True,
+        )
         mods = []
         modString = []
         longestModSize = 0
@@ -204,15 +220,21 @@ class Public(commands.Cog):
             modString.append(mod[0] + " - ")
             modString.append(mod[1] + "\n")
 
-        repoSize = round((float(repo["serverinfo"]["SERVER_INFO"]["totalFilesSize"]) / 1000000000), 2)
+        repoSize = round(
+            (float(repo["serverinfo"]["SERVER_INFO"]["totalFilesSize"]) / 1000000000), 2
+        )
         repoRevision = repo["serverinfo"]["SERVER_INFO"]["revision"]
-        serverInfoString = "Revision: {}\nMods: {}\nTotal size: {} GB".format(repoRevision, len(mods), repoSize)
-        modString = ''.join(modString)
-        outString = "```\n{}\n====================\n{}\n```".format(serverInfoString, modString)
+        serverInfoString = "Revision: {}\nMods: {}\nTotal size: {} GB".format(
+            repoRevision, len(mods), repoSize
+        )
+        modString = "".join(modString)
+        outString = "```\n{}\n====================\n{}\n```".format(
+            serverInfoString, modString
+        )
 
         await self.utility.reply(ctx.message, outString)
 
-    @commands.command(aliases = ['rank'])
+    @commands.command(aliases = ["rank"])
     async def role(self, ctx, *args):
         """Join or leave a role (with autocomplete)
         Usage:
@@ -225,32 +247,58 @@ class Public(commands.Cog):
 
         roleQuery = " ".join(args)
         member = ctx.author
-        role = self.utility.searchRoles(ctx, roleQuery, autocomplete = True, reserved = True)
+        
+        if ctx.guild.id == 333316787603243018:
+            role = self.utility.searchRoles(
+                ctx, roleQuery, autocomplete=True, reserved=True, censorReserved=False
+            )
+        else:
+            role = self.utility.searchRoles(
+                ctx, roleQuery, autocomplete=True, reserved=True
+            )
+
         outString = ""
 
         if role:
             if role != "RESERVED":
                 if role in member.roles:
-                    await member.remove_roles(role, reason = "Remove role through .role command")
-                    outString = "{} You've left **{}**".format(member.mention, role.name)
+                    await member.remove_roles(
+                        role, reason="Remove role through .role command"
+                    )
+                    outString = "{} You've left **{}**".format(
+                        member.mention, role.name
+                    )
                 else:
-                    await member.add_roles(role, reason = "Added role through .role command")
-                    outString = "{} You've joined **{}**".format(member.mention, role.name)
+                    await member.add_roles(
+                        role, reason="Added role through .role command"
+                    )
+                    outString = "{} You've joined **{}**".format(
+                        member.mention, role.name
+                    )
             else:
-                outString = "{} Role **{}** is reserved".format(member.mention, roleQuery)
+                outString = "{} Role **{}** is reserved".format(
+                    member.mention, roleQuery
+                )
         else:
-            outString = "{} Role **{}** does not exist".format(member.mention, roleQuery)
+            outString = "{} Role **{}** does not exist".format(
+                member.mention, roleQuery
+            )
 
         await self.utility.reply(ctx.message, outString)
 
-    @commands.command(aliases = ['ranks'])
+    @commands.command(aliases = ["ranks"])
     async def roles(self, ctx):
         """Get a list of joinable roles"""
 
         longestName = 0
         roleList = []
+        
+        if ctx.guild.id == 333316787603243018:
+            temp = self.utility.getRoles(ctx, reserved = True, sort = True)
+        else:
+            temp = self.utility.getRoles(ctx, reserved = False, sort = True)
 
-        for role in self.utility.getRoles(ctx, reserved = False, sort = True):
+        for role in temp:
             roleList.append(role)
             if len(role.name) > longestName:
                 longestName = len(role.name)
@@ -261,11 +309,13 @@ class Public(commands.Cog):
             numOfMembers = str(len(role.members))
             nameSpaces = " " * (longestName + 1 - len(role.name))
             numSpaces = " " * (3 - len(numOfMembers))
-            outString += "{}{}-{}{} members\n".format(role.name, nameSpaces, numSpaces, numOfMembers)
+            outString += "{}{}-{}{} members\n".format(
+                role.name, nameSpaces, numSpaces, numOfMembers
+            )
 
         await self.utility.reply(ctx.message, "```\n{}```".format(outString))
 
-    @commands.command(aliases = ['wiki'])
+    @commands.command(aliases = ["wiki"])
     async def sqf(self, ctx, *args):
         """Find a bistudio wiki page
 
@@ -280,30 +330,42 @@ class Public(commands.Cog):
 
         async with self.session.get(wikiUrl) as response:
             if response.status == 200:
-                soup = BeautifulSoup(await response.text(), features = "lxml")
+                soup = BeautifulSoup(await response.text(), features="lxml")
 
-                warnings = soup.find_all("div", {"style": "background-color: #EA0; color: #FFF; display: flex;"
-                                                + " align-items: center; margin: 0.5em 0"})
+                warnings = soup.find_all(
+                    "div",
+                    {
+                        "style": "background-color: #EA0; color: #FFF; display: flex;"
+                        + " align-items: center; margin: 0.5em 0"
+                    },
+                )
                 for warning in warnings:
                     warning.decompose()
 
-                desc = soup.find('dt', string = 'Description:')
-                syntax = soup.find('dt', string = "Syntax:")
-                ret = soup.find('dt', string = "Return Value:")
+                desc = soup.find("dt", string="Description:")
+                syntax = soup.find("dt", string="Syntax:")
+                ret = soup.find("dt", string="Return Value:")
 
                 elems = [desc, syntax, ret]
                 outString = ""
                 for elem in elems:
                     if elem is not None:
-                        elemContent = elem.findNext('dd').text
-                        outString += "# {}\n{}\n\n".format(elem.text, elemContent.lstrip().rstrip())
+                        elemContent = elem.findNext("dd").text
+                        outString += "# {}\n{}\n\n".format(
+                            elem.text, elemContent.lstrip().rstrip()
+                        )
 
                 if outString != "":
-                    await self.utility.reply(ctx.message, "<{}>\n```md\n{}```".format(wikiUrl, outString))
+                    await self.utility.reply(
+                        ctx.message, "<{}>\n```md\n{}```".format(wikiUrl, outString)
+                    )
                 else:
                     await self.utility.reply(ctx.message, "<{}>".format(wikiUrl))
             else:
-                await self.utility.reply(ctx.message, "{} Error - Couldn't get <{}>".format(response.status, wikiUrl))
+                await self.utility.reply(
+                    ctx.message,
+                    "{} Error - Couldn't get <{}>".format(response.status, wikiUrl),
+                )
 
     @commands.command()
     async def ticket(self, ctx, repo = None, title = None, body = None):
@@ -314,29 +376,43 @@ class Public(commands.Cog):
         """
 
         if repo not in TICKET_REPOS:
-            await self.utility.reply(ctx.message, "Invalid repo ({})".format(", ".join(TICKET_REPOS)))
+            await self.utility.reply(
+                ctx.message, "Invalid repo ({})".format(", ".join(TICKET_REPOS))
+            )
             return
 
         repo = repo.lower()
 
         if title is None or body is None:
-            await self.utility.reply(ctx.message, 'Command should be in the format: ```\n.ticket {} "title" "body"```\n'.format(repo)
-                                                + 'Please try to give a short but descriptive title,\n' 
-                                                + 'and provide as much useful information in the body as possible')
+            await self.utility.reply(
+                ctx.message,
+                'Command should be in the format: ```\n.ticket {} "title" "body"```\n'.format(
+                    repo
+                )
+                + "Please try to give a short but descriptive title,\n"
+                + "and provide as much useful information in the body as possible",
+            )
             return
 
         author = ctx.message.author
-        title = "{}: {}".format(author.name if (author.nick is None) else author.nick, title)
+        title = "{}: {}".format(
+            author.name if (author.nick is None) else author.nick, title
+        )
 
-        data = {"title": title,
-                "body": body}
+        data = {"title": title, "body": body}
 
         repoUrl = "https://api.github.com/repos/{}/issues".format(TICKET_REPOS[repo])
 
-        async with self.session.post(repoUrl, auth = aiohttp.BasicAuth("ArcommBot", GITHUB_TOKEN), data = json.dumps(data)) as response:
+        async with self.session.post(
+            repoUrl,
+            auth=aiohttp.BasicAuth("ArcommBot", GITHUB_TOKEN),
+            data=json.dumps(data),
+        ) as response:
             if response.status == 201:  # Status: 201 created
                 response = await response.json()
-                await self.utility.reply(ctx.message, "Ticket created at: {}".format(response["html_url"]))
+                await self.utility.reply(
+                    ctx.message, "Ticket created at: {}".format(response["html_url"])
+                )
             else:
                 await self.utility.reply(ctx.message, response)
 
@@ -346,28 +422,43 @@ class Public(commands.Cog):
         Get links for creating new GitHub tickets
         """
         if site is None:
-            await self.utility.reply(ctx.message, "\n".join("{}: <{}>".format(link, TICKET_LINKS[link]) for link in TICKET_LINKS))
+            await self.utility.reply(
+                ctx.message,
+                "\n".join(
+                    "{}: <{}>".format(link, TICKET_LINKS[link]) for link in TICKET_LINKS
+                ),
+            )
             return
 
         site = site.lower()
         if site in TICKET_LINKS:
-            await self.utility.reply(ctx.message, "Create a ticket here: <{}>".format(TICKET_LINKS[site]))
+            await self.utility.reply(
+                ctx.message, "Create a ticket here: <{}>".format(TICKET_LINKS[site])
+            )
         else:
-            await self.utility.reply(ctx.message, "Invalid site ({})".format(", ".join(TICKET_LINKS)))
+            await self.utility.reply(
+                ctx.message, "Invalid site ({})".format(", ".join(TICKET_LINKS))
+            )
 
-    @commands.command(aliases = ['utc'])
+    @commands.command(aliases = ["utc"])
     async def zulu(self, ctx):
-        '''Return Zulu (UTC) time'''
+        """Return Zulu (UTC) time"""
 
         now = datetime.utcnow()
-        outString = "It is currently {}:{}:{} Zulu time (UTC)".format(now.hour, now.minute, now.second)
+        outString = "It is currently {}:{}:{} Zulu time (UTC)".format(
+            now.hour, now.minute, now.second
+        )
 
         await self.utility.reply(ctx.message, outString)
 
     # ===Utility=== #
 
     def formatDt(self, dt):
-        timeUnits = [[dt.days, "days"], [dt.seconds // 3600, "hours"], [(dt.seconds // 60) % 60, "minutes"]]
+        timeUnits = [
+            [dt.days, "days"],
+            [dt.seconds // 3600, "hours"],
+            [(dt.seconds // 60) % 60, "minutes"],
+        ]
         outUnits = []
 
         for unit in timeUnits:
@@ -384,15 +475,15 @@ class Public(commands.Cog):
             if i == len(outUnits):
                 if dtString != "":
                     if len(outUnits) > 2:
-                        dtString += (", and {} {}".format(unit[0], unit[1]))
+                        dtString += ", and {} {}".format(unit[0], unit[1])
                     else:
-                        dtString += (" and {} {}".format(unit[0], unit[1]))
+                        dtString += " and {} {}".format(unit[0], unit[1])
                 else:
-                    dtString += ("{} {}".format(unit[0], unit[1]))
+                    dtString += "{} {}".format(unit[0], unit[1])
             elif i == len(outUnits) - 1:
-                dtString += ("{} {}".format(unit[0], unit[1]))
+                dtString += "{} {}".format(unit[0], unit[1])
             else:
-                dtString += ("{} {}, ".format(unit[0], unit[1]))
+                dtString += "{} {}, ".format(unit[0], unit[1])
 
         return dtString
 
@@ -423,7 +514,9 @@ class Public(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         self.utility = self.bot.get_cog("Utility")
-        await self.utility.send_message(self.utility.channels['testing'], "ArcommBot is fully loaded")
+        await self.utility.send_message(
+            self.utility.channels["testing"], "ArcommBot is fully loaded"
+        )
 
 
 def setup(bot):
