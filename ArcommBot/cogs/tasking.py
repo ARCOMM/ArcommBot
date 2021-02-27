@@ -96,7 +96,7 @@ class R3DB():
                     runtime = end - start if end is not None and start is not None else "N/A"
                     replay = f"https://r3.arcomm.co.uk/{_id}"
                     print(row)
-                    if runtime is not "N/A":
+                    if runtime != "N/A":
                         replays.append((mission, _map, count, start, end, runtime, replay, _id))
 
         return replays
