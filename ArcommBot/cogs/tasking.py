@@ -7,6 +7,7 @@ import os
 import re
 import sqlite3
 from urllib.parse import urlparse
+from httplib2 import ServerNotFoundError
 
 import aiohttp
 import aiomysql
@@ -190,7 +191,12 @@ class Tasking(commands.Cog):
                     if lastDT < now:
                         lastDatetime['datetime'] = "now"
 
-        self.calendar.storeCalendar(lastDatetime['datetime'])
+        try:
+            self.calendar.storeCalendar(lastDatetime['datetime'])
+        except ServerNotFoundError as e:
+            self.utility.send_message(self.utility.channels["testing"], e)
+            return
+        
         newAnnouncement = True
 
         while newAnnouncement:
