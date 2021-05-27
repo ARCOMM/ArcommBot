@@ -228,6 +228,10 @@ class Tasking(commands.Cog):
         cupChanged, cupPost = await self.handleCup()
         steamChanged, steamPost = await self.handleSteam()
 
+        logger.debug("Github %s -> %s", githubChanged, githubPost)
+        logger.debug("Cup %s -> %s", cupChanged, cupPost)
+        logger.debug("Steam %s -> %s", steamChanged, steamPost)
+
         if githubChanged or cupChanged or steamChanged:
             outString = "<@&{}>\n{}{}{}".format(self.utility.roles['admin'], githubPost, cupPost, steamPost)
             await self.utility.send_message(self.utility.channels['staff'], outString)
