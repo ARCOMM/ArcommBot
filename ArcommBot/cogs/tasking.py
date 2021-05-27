@@ -7,10 +7,12 @@ import os
 import re
 import sqlite3
 from urllib.parse import urlparse
+from httplib2 import ServerNotFoundError
 
 import aiohttp
+import aiomysql
 from bs4 import BeautifulSoup
-from discord import File, Game
+from discord import File, Game, Embed
 from discord.ext import commands, tasks
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
@@ -78,6 +80,51 @@ class CalendarDB():
 
         return event
 
+class R3DB():
+    def __init__(self):
+        self.pool = None
+
+    async def getReplays(self, lastId):
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                #await cur.execute(f"SELECT id, missionName, map, playerCount, dateStarted, lastEventMissionTime FROM replays WHERE id > {lastId} AND hidden = '0' AND (missionName LIKE 'ARC_COOP%' OR missionName LIKE 'ARC_TVT%')")
+                await cur.execute(f"SELECT id, missionName, map, playerCount, dateStarted, lastEventMissionTime FROM replays WHERE id > {lastId} AND hidden = '0'")
+
+                replays = []
+                for row in await cur.fetchall():
+                    _id, mission, _map, count, start, end = row
+                    runtime = end - start if end is not None and start is not None else "N/A"
+                    replay = f"https://r3.arcomm.co.uk/{_id}"
+                    print(row)
+                    if runtime != "N/A":
+                        replays.append((mission, _map, count, start, end, runtime, replay, _id))
+
+        return replays
+    
+    async def createPool(self):
+        self.pool = await aiomysql.create_pool(host='r3.arcomm.co.uk', port=3306,
+                                               user='r3_acc', password='38VfJW26hyI8L1q22Mh6',
+                                               db='r3_db')
+
+class LastModified():
+    resourcesLocked = False
+
+    @classmethod
+    def uses_lastModified(cls, func):
+        async def wrapper(cog):
+            if LastModified.resourcesLocked:
+                return False, f"{str(func)} res locked"
+            else:
+                LastModified.resourcesLocked = True
+                try:
+                    result = await func(cog)
+                    LastModified.resourcesLocked = False
+                    return result
+                except Exception as e:
+                    LastModified.resourcesLocked = False
+                    return False, f"Error running {str(func)}:\n{str(e)}"
+
+        return wrapper
 
 class Tasking(commands.Cog):
     '''Contains scheduled tasks'''
@@ -86,8 +133,15 @@ class Tasking(commands.Cog):
         self.bot = bot
         self.utility = self.bot.get_cog("Utility")
         self.calendar = CalendarDB()
+        self.r3 = R3DB()
         self.session = aiohttp.ClientSession()
-        self.resourcesLocked = False
+
+    # ===Commands=== #
+
+    @commands.command()
+    @commands.has_role("Staff")
+    async def r3(self, ctx):
+        success, message = await self.r3Task()
 
     # ===Tasks=== #
 
@@ -137,7 +191,12 @@ class Tasking(commands.Cog):
                     if lastDT < now:
                         lastDatetime['datetime'] = "now"
 
-        self.calendar.storeCalendar(lastDatetime['datetime'])
+        try:
+            self.calendar.storeCalendar(lastDatetime['datetime'])
+        except ServerNotFoundError as e:
+            self.utility.send_message(self.utility.channels["testing"], e)
+            return
+        
         newAnnouncement = True
 
         while newAnnouncement:
@@ -168,6 +227,10 @@ class Tasking(commands.Cog):
         githubChanged, githubPost = await self.handleGithub()
         cupChanged, cupPost = await self.handleCup()
         steamChanged, steamPost = await self.handleSteam()
+
+        logger.debug("Github %s -> %s", githubChanged, githubPost)
+        logger.debug("Cup %s -> %s", cupChanged, cupPost)
+        logger.debug("Steam %s -> %s", steamChanged, steamPost)
 
         if githubChanged or cupChanged or steamChanged:
             outString = "<@&{}>\n{}{}{}".format(self.utility.roles['admin'], githubPost, cupPost, steamPost)
@@ -238,6 +301,31 @@ class Tasking(commands.Cog):
 
         await asyncio.sleep((future - now).seconds)
 
+    @LastModified.uses_lastModified
+    async def r3Task(self):
+        logger.debug("r3Task called")
+
+        lastModified = {}
+        with open('resources/last_modified.json', 'r') as f:
+            lastModified = json.load(f)
+
+        replays = await self.r3.getReplays(lastModified["r3_lastId"])
+
+        if len(replays) == 0:
+            return False, ""
+
+        for r in replays:
+            mission, _map, count, start, end, runtime, replay, _id = r
+            embed = Embed(timestamp = start, title = mission, url = replay)
+            embed.add_field(name = "Map", value = _map).add_field(name = "Players", value = count).add_field(name = "Runtime", value = runtime).add_field(name = "Start", value = start.time()).add_field(name = "End", value = end.time())
+            await self.utility.send_embed(self.utility.channels["op_news"], embed)
+
+        lastModified["r3_lastId"] = replays[-1][7]
+        with open('resources/last_modified.json', 'w') as f:
+            json.dump(lastModified, f)
+
+        return True, ""
+    
     # ===Utility=== #
 
     async def announce(self, timeUntil, summary, startTime, endTime):
@@ -285,12 +373,8 @@ class Tasking(commands.Cog):
 
         await channel.send(introString, file = File("resources/recruit_post.md", filename = "recruit_post.md"))
 
+    @LastModified.uses_lastModified
     async def handleA3Sync(self):
-        if self.resourcesLocked:
-            await self.utility.send_message(self.utility.channels["testing"], "a3sync res locked")
-            return False, ""
-        self.resourcesLocked = True
-
         url = "{}.a3s/".format(self.utility.REPO_URL)
         scheme = urlparse(url).scheme.capitalize
 
@@ -304,7 +388,6 @@ class Tasking(commands.Cog):
         updatePost = ""
         newRevision = repo["serverinfo"]["SERVER_INFO"]["revision"]
         if not (lastModified['revision'] < newRevision):
-            self.resourcesLocked = False
             return False, updatePost
 
         newRepoSize = round((float(repo["serverinfo"]["SERVER_INFO"]["totalFilesSize"]) / 1000000000), 2)
@@ -330,23 +413,12 @@ class Tasking(commands.Cog):
 
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
-            print(lastModified)
-
-        lastModified = {}
-        with open('resources/last_modified.json', 'r') as f:
-            lastModified = json.load(f)
-            print(lastModified)
         
-        self.resourcesLocked = False
         return True, updatePost
 
+    @LastModified.uses_lastModified
     async def handleGithub(self):
         logger.debug("handleGithub called")
-
-        if self.resourcesLocked:
-            await self.utility.send_message(self.utility.channels["testing"], "github res locked")
-            return False, ""
-        self.resourcesLocked = True
 
         repoUrl = 'https://api.github.com/repos'
         lastModified = {}
@@ -384,17 +456,11 @@ class Tasking(commands.Cog):
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
 
-        self.resourcesLocked = False
-
         return repoChanged, updatePost
 
+    @LastModified.uses_lastModified
     async def handleCup(self):
         logger.debug("handleCup called")
-
-        if self.resourcesLocked:
-            await self.utility.send_message(self.utility.channels["testing"], "cup res locked")
-            return False, ""
-        self.resourcesLocked = True
 
         lastModified = {}
 
@@ -431,17 +497,11 @@ class Tasking(commands.Cog):
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
 
-        self.resourcesLocked = False
-
         return repoChanged, updatePost
 
+    @LastModified.uses_lastModified
     async def handleSteam(self):
         logger.debug("handleSteam called")
-
-        if self.resourcesLocked:
-            await self.utility.send_message(self.utility.channels["testing"], "steam res locked")
-            return False, ""
-        self.resourcesLocked = True
 
         # https://partner.steamgames.com/doc/webapi/ISteamRemoteStorage
         steamUrl = 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/'
@@ -489,8 +549,6 @@ class Tasking(commands.Cog):
         with open('resources/last_modified.json', 'w') as f:
             json.dump(lastModified, f)
 
-        self.resourcesLocked = False
-
         return repoChanged, updatePost
 
     async def getSteamChangelog(self, modId):
@@ -523,6 +581,8 @@ class Tasking(commands.Cog):
 
         self.calendar.remake()
         self.calendar.storeCalendar()
+
+        await self.r3.createPool()
 
         self.calendarTask.start()
         self.attendanceTask.start()

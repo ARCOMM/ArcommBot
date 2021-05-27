@@ -1,5 +1,7 @@
 from enum import Enum
 
+from cogs.utility import Utility
+
 class LogSeverity(Enum):
     DEBUG = 0
     INFO = 1
@@ -28,6 +30,19 @@ class MockLogger():
                 return True
         return False
 
+class MockBot():
+    def __init__(self, logger):
+        self.logger = logger
+        self.utility = Utility(self)
+        self.utility.logger = logger
+
+    def __str__(self):
+        return "MockBot"
+
+    def get_cog(self, cog):
+        if cog == "Utility":
+            return self.utility
+
 class MockMessage():
     def __init__(self, channel, content, reference, author):
         self.channel = channel
@@ -54,17 +69,22 @@ class MockChannel():
         return MockMessage(self, content, reference, author)
 
 class MockContext():
-    def __init__(self, cog = None, message = None):
+    def __init__(self, message, cog = None):
         self.message = message
         self.cog = cog
+        self.author = message.author
 
 class MockUser():
-    def __init__(self, guild = None, name = None, roles = []):
+    def __init__(self, guild, name, roles = [], nick = None):
         self.guild = guild
         self.name = name
         self.roles = roles
+        self.nick = nick
+        self.mention = "<&{}>".format(name)
 
         self.guild.users.append(self)
+        for role in self.roles:
+            role.members.append(self)
     
     def __str__(self):
         return self.name
@@ -83,6 +103,7 @@ class MockRole():
     def __init__(self, name, colour):
         self.name = name
         self.colour = colour
+        self.members = []
 
     def __str__(self):
         return f"{self.name}:{self.colour}"
