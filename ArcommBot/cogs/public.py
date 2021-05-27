@@ -309,7 +309,7 @@ class Public(commands.Cog):
             numOfMembers = str(len(role.members))
             nameSpaces = " " * (longestName + 1 - len(role.name))
             numSpaces = " " * (3 - len(numOfMembers))
-            outString += "{}{}-{}{} members\n".format(
+            outString += "{}{}-{}{}\n".format(
                 role.name, nameSpaces, numSpaces, numOfMembers
             )
 
