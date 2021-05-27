@@ -1,4 +1,4 @@
-aiohttp==3.6.2
+aiohttp==3.7.4
 bs4==0.0.1
 discord.py==1.6.0
 google-auth==1.6.2
